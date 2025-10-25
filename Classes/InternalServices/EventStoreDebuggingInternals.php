@@ -10,7 +10,7 @@ use Neos\EventStore\Model\EventStream\VirtualStreamName;
 final readonly class EventStoreDebuggingInternals implements ContentRepositoryServiceInterface
 {
     public function __construct(
-        private readonly EventStoreInterface $eventStore
+        private EventStoreInterface $eventStore
     )
     {
     }

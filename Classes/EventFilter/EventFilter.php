@@ -18,11 +18,7 @@ final readonly class EventFilter
     {
         $filter = $this;
         foreach ($names as $name) {
-            if (class_exists($name)) {
-                /** same logic as in {@see \Neos\ContentRepository\Core\EventStore\EventNormalizer::create()} */
-                $name = substr($name, strrpos($name, '\\') + 1);
-            }
-
+            $name = self::eventClassNameToShortName($name);
             $filter = $filter->where('type != ?', [$name]);
         }
 
@@ -49,5 +45,14 @@ final readonly class EventFilter
         };
 
         return '((' . implode(') AND (', $this->where) . '))';
+    }
+
+    public static function eventClassNameToShortName(string $name): string
+    {
+        if (class_exists($name)) {
+            /** same logic as in {@see \Neos\ContentRepository\Core\EventStore\EventNormalizer::create()} */
+            $name = substr($name, strrpos($name, '\\') + 1);
+        }
+        return $name;
     }
 }

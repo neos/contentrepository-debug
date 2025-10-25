@@ -5,7 +5,6 @@ namespace Neos\ContentRepository\Debug\Command;
 use Doctrine\DBAL\Connection;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Debug\ContentRepositoryDebugger;
-use Neos\ContentRepository\Debug\ContentRepositoryDebuggerFactory;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Cli\CommandController;
 
