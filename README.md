@@ -13,7 +13,7 @@ Features:
 >
 > Never run this against production. Always work with a local database copy.
 
-## Quick start: run a debug script
+# Quick start: run a debug script
 
 Example script `DebugEx1.php`:
 
@@ -55,6 +55,8 @@ Inside your debug script (`DebugEx1.php`) you automatically get two variables:
 
 - $dbg: `Neos\ContentRepository\Debug\ContentRepositoryDebugger` - see below for API details
 - $cr:  `Neos\ContentRepository\Core\ContentRepository` (the source Content Repository you passed, or `default` if none was specified)
+
+# Analysis of Event Store
 
 ## API quick reference
 
@@ -183,4 +185,35 @@ $sql = 'SELECT * FROM ' . \Neos\ContentRepositoryRegistry\Factory\EventStore\Doc
 $result = $dbg->db->executeQuery($sql, ['from' => '2024-01-01']);
 $dbg->printTable($result);
 ```
+
+# Support for virtual indices for JetBrains Database Tools
+
+When working with the Content Repository database in tools like DataGrip, PHPStorm, or IntelliJ IDEA, you can **import virtual foreign key relationships to enable better navigation and understanding of the database structure**.
+
+The Neos Content Repository uses a projection-based architecture where foreign key constraints are intentionally not defined in the database schema. However, the relationships between tables exist logically. Virtual indices allow your database tool to understand these relationships without modifying the actual database.
+
+**Benefits**
+
+- **Visual relationship diagrams**: See how tables connect to each other
+- **Easy navigation**: Jump from a foreign key value directly to the referenced row
+- **Better autocomplete**: Get suggestions based on related table columns
+- **Query assistance**: Database tools can suggest JOINs based on virtual relationships
+
+## How to use
+
+1. Open your database in a JetBrains database tool (DataGrip, IntelliJ IDEA, PHPStorm, etc.)
+2. Right-click on your database host -> Properties
+3. Select **Options → Virtual objects and attributes**
+4. Import the `virtual-indices-for-jetbrains-database-tools.xml` file from this package
+
+## Database name customization
+
+⚠️ **Important**: The XML file currently uses `neos` as the database name. If your database has a different name, you'll need to replace all occurrences of `neos.` with your actual database name before importing:
+
+```bash
+sed -i '' 's/neos\./your_database_name./g' virtual-indices-for-jetbrains-database-tools.xml
+```
+
+Or edit the file and search/replace for `neos.`.
+
 
