@@ -1,5 +1,19 @@
 # Content Repository Debugger (Neos.ContentRepository.Debug)
 
+<!-- TOC -->
+* [Content Repository Debugger (Neos.ContentRepository.Debug)](#content-repository-debugger-neoscontentrepositorydebug)
+* [Quick start: run a debug script](#quick-start-run-a-debug-script)
+* [Analysis of Event Store](#analysis-of-event-store)
+  * [API quick reference](#api-quick-reference)
+  * [Event copying examples](#event-copying-examples)
+  * [Switching the active Content Repository](#switching-the-active-content-repository)
+  * [Querying the event log](#querying-the-event-log)
+  * [Arbitrary queries via `$dbg->db`](#arbitrary-queries-via-dbg-db)
+* [Support for virtual indices for JetBrains Database Tools](#support-for-virtual-indices-for-jetbrains-database-tools)
+  * [How to use](#how-to-use)
+  * [Database name customization](#database-name-customization)
+<!-- TOC -->
+
 Tools to explore and debug the Neos Content Repository event store.
 
 Features:
@@ -215,5 +229,13 @@ sed -i '' 's/neos\./your_database_name./g' virtual-indices-for-jetbrains-databas
 ```
 
 Or edit the file and search/replace for `neos.`.
+
+
+# Debug Views in the database
+
+Run `./flow cr:setupDebugViews` to create two SQL Views in your database that make ad-hoc SQL exploration much easier:
+
+- **`cr_{id}_dbg_allNodesInLive`** — all nodes in the live workspace, with dimension space points, parent node ID, and origin dimension space point already joined in.
+- **`cr_{id}_dbg_allDocumentNodesInLive`** — same as above, but restricted to document nodes (those with a URI path), additionally joining the `documenturipath` projection. Rows are ordered by `sitenodename` / `uripath` for easy browsing.
 
 
