@@ -5,6 +5,7 @@ namespace Neos\ContentRepository\Debug\Command;
 use Doctrine\DBAL\Connection;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Debug\ContentRepositoryDebugger;
+use Neos\ContentRepository\Debug\DebugView\DebugViewCreator;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Cli\CommandController;
 
@@ -15,7 +16,7 @@ class CrCommandController extends CommandController
 
     public function __construct(
         protected readonly ContentRepositoryRegistry $contentRepositoryRegistry,
-        private readonly Connection $connection,
+        private readonly Connection                  $connection,
     )
     {
         parent::__construct();
@@ -27,5 +28,12 @@ class CrCommandController extends CommandController
         $this->outputLine('Debugging script: ' . $debugScript);
 
         $this->debugger->execScriptFile($debugScript, ContentRepositoryId::fromString($contentRepository));
+    }
+
+    public function setupDebugViewsCommand(string $contentRepository = 'default')
+    {
+        $this->outputLine('Setting up Debug Views in ContentRepository ' . $contentRepository);
+
+        $this->debugger->setupDebugViews(ContentRepositoryId::fromString($contentRepository));
     }
 }

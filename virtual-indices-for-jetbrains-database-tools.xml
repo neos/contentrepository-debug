@@ -1,41 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <data>
-    <object-set>
-        <table path="neos.cr_default_p_graph_contentstream">
-            <table path="neos.cr_default_p_graph_contentstream" name="dbg_src_contentstream" from="sourceContentStreamId" to="id"/>
-        </table>
-        <table path="neos.cr_default_p_graph_hierarchyrelation">
-            <table path="neos.cr_default_p_graph_contentstream" name="dbg_contentstream" from="contentstreamid" to="id"/>
-            <table path="neos.cr_default_p_graph_dimensionspacepoints" name="dbg_dimensionspacepoints" from="dimensionspacepointhash" to="hash"/>
-            <table path="neos.cr_default_p_graph_node" name="dbg_childnodeanchor" from="childnodeanchor" to="relationanchorpoint"/>
-            <table path="neos.cr_default_p_graph_node" name="dbg_parentnodeanchor" from="parentnodeanchor" to="relationanchorpoint"/>
-        </table>
-        <table path="neos.cr_default_p_graph_node">
-            <table path="neos.cr_default_p_graph_dimensionspacepoints" name="dbg_origindimensonspacepointhash" from="origindimensionspacepointhash" to="hash"/>
-        </table>
-        <table path="neos.cr_default_p_graph_referencerelation">
-            <table path="neos.cr_default_p_graph_node" name="dbg_destinationnode" from="destinationnodeaggregateid" to="nodeaggregateid"/>
-            <table path="neos.cr_default_p_graph_node" name="dbg_nodeanchorpoint" from="nodeanchorpoint" to="relationanchorpoint"/>
-        </table>
-        <table path="neos.cr_default_p_graph_workspace">
-            <table path="neos.cr_default_p_graph_contentstream" name="dbg_contentstream" from="currentContentStreamId" to="id"/>
-            <table path="neos.cr_default_p_graph_workspace" name="dbg_baseworkspacename" from="baseWorkspaceName" to="name"/>
-        </table>
-        <table path="neos.cr_default_p_neos_change">
-            <table path="neos.cr_default_p_graph_contentstream" name="dbg_contentstream" from="contentStreamId" to="id"/>
-            <table path="neos.cr_default_p_graph_dimensionspacepoints" name="dbg_origindimensionspacepointhash" from="originDimensionSpacePointHash" to="hash"/>
-            <table path="neos.cr_default_p_graph_node" name="dbg_nodeaggregatid" from="nodeAggregateId" to="nodeaggregateid"/>
-        </table>
-        <table path="neos.cr_default_p_neos_documenturipath_uri">
-            <table path="neos.cr_default_p_graph_dimensionspacepoints" name="dbg_dimensionspacepointhash" from="dimensionspacepointhash" to="hash"/>
-            <table path="neos.cr_default_p_graph_dimensionspacepoints" name="dbg_origindimensionspacepointhash" from="origindimensionspacepointhash" to="hash"/>
-            <table path="neos.cr_default_p_graph_node" name="dbg_nodeaggregateid" from="nodeaggregateid" to="nodeaggregateid"/>
-            <table path="neos.cr_default_p_neos_documenturipath_uri" name="dbg_parent" from="parentnodeaggregateid" to="nodeaggregateid"/>
-            <table path="neos.cr_default_p_neos_documenturipath_uri" name="dbg_preceding" from="precedingnodeaggregateid" to="nodeaggregateid"/>
-            <table path="neos.cr_default_p_neos_documenturipath_uri" name="dbg_succeeding" from="succeedingnodeaggregateid" to="nodeaggregateid"/>
-        </table>
-        <table path="neos.cr_default_subscriptions">
-            <table path="neos.cr_default_events" name="dbg_position" from="position" to="sequencenumber"/>
-        </table>
-    </object-set>
+  <object-set>
+    <table path="neos.cr_default_p_graph_contentstream">
+      <table path="neos.cr_default_p_graph_contentstream" name="dbg_src_contentstream" from="sourceContentStreamId" to="id"/>
+    </table>
+    <table path="neos.cr_default_p_graph_hierarchyrelation">
+      <table path="neos.cr_default_p_graph_contentstream" name="dbg_contentstream" from="contentstreamid" to="id"/>
+      <table path="neos.cr_default_p_graph_dimensionspacepoints" name="dbg_dimensionspacepoints" from="dimensionspacepointhash" to="hash"/>
+      <table path="neos.cr_default_p_graph_node" name="dbg_childnodeanchor" from="childnodeanchor" to="relationanchorpoint"/>
+      <table path="neos.cr_default_p_graph_node" name="dbg_parentnodeanchor" from="parentnodeanchor" to="relationanchorpoint"/>
+    </table>
+    <table path="neos.cr_default_p_graph_node">
+      <table path="neos.cr_default_p_graph_dimensionspacepoints" name="dbg_origindimensionspacepointhash" from="origindimensionspacepointhash" to="hash"/>
+    </table>
+    <table path="neos.cr_default_p_graph_referencerelation">
+      <table path="neos.cr_default_p_graph_node" name="dbg_destinationnode" from="destinationnodeaggregateid" to="nodeaggregateid"/>
+      <table path="neos.cr_default_p_graph_node" name="dbg_nodeanchorpoint" from="nodeanchorpoint" to="relationanchorpoint"/>
+    </table>
+    <table path="neos.cr_default_p_graph_workspace">
+      <table path="neos.cr_default_p_graph_contentstream" name="dbg_contentstream" from="currentContentStreamId" to="id"/>
+      <table path="neos.cr_default_p_graph_workspace" name="dbg_baseworkspacename" from="baseWorkspaceName" to="name"/>
+    </table>
+    <table path="neos.cr_default_p_neos_change">
+      <table path="neos.cr_default_p_graph_contentstream" name="dbg_contentstream" from="contentStreamId" to="id"/>
+      <table path="neos.cr_default_p_graph_dimensionspacepoints" name="dbg_origindimensionspacepointhash" from="originDimensionSpacePointHash" to="hash"/>
+      <table path="neos.cr_default_p_graph_node" name="dbg_nodeaggregatid" from="nodeAggregateId" to="nodeaggregateid"/>
+    </table>
+    <table path="neos.cr_default_p_neos_documenturipath_uri">
+      <table path="neos.cr_default_p_graph_dimensionspacepoints" name="dbg_dimensionspacepointhash" from="dimensionspacepointhash" to="hash"/>
+      <table path="neos.cr_default_p_graph_dimensionspacepoints" name="dbg_origindimensionspacepointhash" from="origindimensionspacepointhash" to="hash"/>
+      <table path="neos.cr_default_p_graph_node" name="dbg_nodeaggregateid" from="nodeaggregateid" to="nodeaggregateid"/>
+      <table path="neos.cr_default_p_neos_documenturipath_uri" name="dbg_parent" from="parentnodeaggregateid" to="nodeaggregateid"/>
+      <table path="neos.cr_default_p_neos_documenturipath_uri" name="dbg_preceding" from="precedingnodeaggregateid" to="nodeaggregateid"/>
+      <table path="neos.cr_default_p_neos_documenturipath_uri" name="dbg_succeeding" from="succeedingnodeaggregateid" to="nodeaggregateid"/>
+    </table>
+    <table path="neos.cr_default_subscriptions">
+      <table path="neos.cr_default_events" name="dbg_position" from="position" to="sequencenumber"/>
+    </table>
+    <view path="neos.cr_default_dbg_allNodesInLive">
+      <view path="neos.cr_default_dbg_allNodesInLive" from="p_nodeaggregateid" to="nodeaggregateid"/>
+    </view>
+    <view path="neos.cr_default_dbg_allDocumentNodesInLive">
+      <view path="neos.cr_default_dbg_allDocumentNodesInLive" from="p_nodeaggregateid" to="nodeaggregateid"/>
+    </view>
+  </object-set>
 </data>

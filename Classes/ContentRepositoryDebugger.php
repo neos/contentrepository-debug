@@ -8,6 +8,7 @@ use Neos\ContentRepository\Core\Factory\ContentRepositoryServiceInterface;
 use Neos\ContentRepository\Core\Service\ContentRepositoryMaintainerFactory;
 use Neos\ContentRepository\Core\Service\ContentStreamPrunerFactory;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
+use Neos\ContentRepository\Debug\DebugView\DebugViewCreator;
 use Neos\ContentRepository\Debug\InternalServices\EventStoreDebuggingInternalsFactory;
 use Neos\ContentRepository\Debug\InternalServices\LowLevelDatabaseUtil;
 use Neos\ContentRepository\Debug\Query\DebugQueryBuilder;
@@ -94,7 +95,7 @@ class ContentRepositoryDebugger
 
         // Truncate and re-insert
         $this->db->executeStatement("TRUNCATE TABLE {$targetTableName}");
-        $sql = "INSERT INTO {$targetTableName} 
+        $sql = "INSERT INTO {$targetTableName}
             SELECT * FROM {$sourceTableName} WHERE " . $filter->asWhereClause();
         $this->db->executeStatement($sql, $filter->parameters);
 
@@ -205,6 +206,12 @@ class ContentRepositoryDebugger
             },
             new \DateTimeImmutable('now')
         );
+    }
+
+    public function setupDebugViews(ContentRepositoryId $contentRepositoryId): void
+    {
+        $debugViewCreator = new DebugViewCreator($this->db, $contentRepositoryId);
+        $debugViewCreator->createDebugViews();
     }
 
 }
