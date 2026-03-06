@@ -1,0 +1,7 @@
+[tasks.test]
+description = "Run all unit tests for this package"
+run = 'docker compose -f ../../../docker-compose.yml exec neos bash -c "cd /app && bin/phpunit -c Build/BuildEssentials/PhpUnit/UnitTests.xml --colors DistributionPackages/Neos.ContentRepository.Debug/Tests/Unit/"'
+
+[tasks."test:unit"]
+description = "Run a specific unit test file (usage: mise run test:unit Tests/Unit/Explore/ToolContextTest.php)"
+run = 'docker compose -f ../../../docker-compose.yml exec neos bash -c "cd /app && bin/phpunit -c Build/BuildEssentials/PhpUnit/UnitTests.xml --colors DistributionPackages/Neos.ContentRepository.Debug/$1"'
