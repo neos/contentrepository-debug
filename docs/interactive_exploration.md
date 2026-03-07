@@ -2,7 +2,7 @@
 
 ## Goal
 
-A new CLI command `cr:explore` that lets you interactively navigate and inspect a Neos Content Repository — starting from an entry point (node UUID, URI path, etc.), drilling into tools, and always being able to resume or share the exact session state.
+A CLI command `cr:explore` that lets you interactively navigate and inspect a Neos Content Repository — starting from an entry point (node UUID, workspace, etc.), drilling into tools, and always being able to resume or share the exact session state.
 
 Designed to support CLI, web UI, and MCP interfaces from the same core.
 
@@ -12,11 +12,11 @@ Designed to support CLI, web UI, and MCP interfaces from the same core.
 
 Everything the user can do in a session is a **Tool** (`ToolInterface`). This covers:
 
-- **Entry**: resolve an identifier into context (e.g. enter a node UUID)
+- **Entry**: resolve an identifier into context (e.g. enter a node UUID, choose a workspace)
 - **Navigation**: move to a related entity (e.g. go to parent node)
 - **Inspection**: display information about the current context (read-only)
 
-"Inspection" was considered but implies read-only. "Action" has MVC connotations. "Tool" is generic, correct, and aligns with MCP's vocabulary — important since MCP support is a target.
+"Tool" is generic, correct, and aligns with MCP's vocabulary — important since MCP support is a target.
 
 The `Explore` prefix is kept only on `ExploreSession` (the entry concept). All supporting types drop it since they are already scoped by the `Neos\ContentRepository\Debug\Explore` namespace.
 
@@ -24,7 +24,7 @@ The `Explore` prefix is kept only on `ExploreSession` (the entry concept). All s
 
 ## Core Principles
 
-- **Resumable**: Every session state maps 1:1 to CLI arguments. A dedicated tool (`ShowResumeCommand`) always appears in the menu and prints the resume invocation — not hardcoded into the loop.
+- **Resumable**: Every session state maps 1:1 to CLI arguments. A dedicated tool (`ShowResumeCommand`) always appears in the menu and prints the resume invocation.
 - **Plain-text legible**: Numbered choices, table output. A copy-pasted terminal session must read as a coherent log.
 - **Type-safe**: All context values are proper CR value objects. No raw strings internally.
 - **Extensible everywhere**: Context types, tools, and transports are all open for extension without touching the core loop.
@@ -36,72 +36,67 @@ The `Explore` prefix is kept only on `ExploreSession` (the entry concept). All s
 
 `ToolContextRegistry` — **`@api`: only the `register()` method is public API**. All lookup/iteration methods are `@internal` and used only by `ToolDispatcher`.
 
-Registered globally in `Package.php` (or additional packages' `Package.php`). Each entry describes one kind of context value:
+Registered in `CrCommandController` (currently hardcoded; will move to `Package.php`). Each entry describes one kind of context value:
 
 ```php
-// Package.php
-ToolContextRegistry::register(
-    name:       'node',
-    type:       NodeAggregateId::class,
-    alias:      'n',
-    fromString: fn(string $s) => NodeAggregateId::fromString($s),
-    toString:   fn(NodeAggregateId $v) => $v->value,
-);
-
-ToolContextRegistry::register(
-    name:       'dsp',
-    type:       DimensionSpacePoint::class,
-    alias:      'd',
-    fromString: fn(string $s) => DimensionSpacePoint::fromArray(/* parse key:val,... */),
-    toString:   fn(DimensionSpacePoint $v) => /* key:val,... */,
-);
-
-ToolContextRegistry::register(
-    name:       'workspace',
-    type:       WorkspaceName::class,
-    alias:      'ws',
-    fromString: fn(string $s) => WorkspaceName::fromString($s),
-    toString:   fn(WorkspaceName $v) => $v->value,
-);
-
-ToolContextRegistry::register(
+$registry->register(
     name:       'cr',
     type:       ContentRepositoryId::class,
     alias:      'cr',
-    fromString: fn(string $s) => ContentRepositoryId::fromString($s),
+    fromString: ContentRepositoryId::fromString(...),
     toString:   fn(ContentRepositoryId $v) => $v->value,
 );
+$registry->register(
+    name:       'node',
+    type:       NodeAggregateId::class,
+    alias:      'n',
+    fromString: NodeAggregateId::fromString(...),
+    toString:   fn(NodeAggregateId $v) => (string)$v,
+);
+$registry->register(
+    name:       'workspace',
+    type:       WorkspaceName::class,
+    alias:      'ws',
+    fromString: WorkspaceName::fromString(...),
+    toString:   fn(WorkspaceName $v) => (string)$v,
+);
+$registry->register(
+    name:       'dsp',
+    type:       DimensionSpacePoint::class,
+    alias:      'dsp',
+    fromString: DimensionSpacePoint::fromJsonString(...),
+    toString:   fn(DimensionSpacePoint $v) => $v->toJson(),
+);
 ```
-
-**Any package** can call `ToolContextRegistry::register()` in its own `Package.php` to introduce new context dimensions. No changes to core.
 
 ---
 
 ## ToolContext — `@api`
 
-A **generic immutable bag**: `string $typeName => object $value`, keyed by the registered type name. Not a fixed DTO. Tool authors read context values from this in `getMenuLabel()`.
+A **generic immutable bag**: `string $name => object $value`. Tool authors read context values in `getMenuLabel()`. Tools set context values via `$context->with(...)` / `$context->withFromString(...)`.
 
 ```php
 final class ToolContext
 {
-    /** @param array<string, object> $values */
-    private function __construct(private readonly array $values) {}
-
     public static function empty(): self { ... }
+    public static function create(ToolContextRegistry $registry): self { ... }
 
-    public function with(string $name, object $value): self { ... }    // returns new instance
-    public function without(string $name): self { ... }                // returns new instance
+    public function with(string $name, object $value): self { ... }
+    public function withFromString(string $name, string $stringValue): self { ... }
+    public function without(string $name): self { ... }
     public function get(string $name): ?object { ... }
     public function has(string $name): bool { ... }
 
-    /** @internal Used by ToolDispatcher: look up by registered PHP class. */
+    /** @internal Used by ToolDispatcher */
     public function getByType(string $fqcn): ?object { ... }
     /** @internal */
     public function hasByType(string $fqcn): bool { ... }
 }
 ```
 
-`ToolContextSerializer` (`@internal`) converts between `ToolContext` and CLI argument strings using the registry's `fromString`/`toString`.
+When created via `ToolContext::create($registry)`, the context carries a reference to the registry — enabling `withFromString()` without tools depending on the registry directly.
+
+`ToolContextSerializer` (`@internal`) converts between `ToolContext` and CLI argument strings.
 
 ---
 
@@ -110,217 +105,140 @@ final class ToolContext
 ```php
 interface ToolInterface
 {
-    /** Label shown in the numbered tool menu. May be context-sensitive. */
     public function getMenuLabel(ToolContext $context): string;
 }
 ```
 
-That is the **only** required interface method. Availability and invocation are determined by reflection on the `execute()` method (see below). Tools are discovered via DI — no manual registration.
+That is the **only** required interface method. The `execute()` method is discovered by reflection (see Dispatch below). Tools must **never** depend on `ToolContextRegistry` — use `ToolContext::withFromString()` instead.
 
 ---
 
 ## Reflection-Based Dispatch — `@internal`
 
-`ToolDispatcher` determines availability and invokes tools without the tools knowing about the context bag or transport.
+`ToolDispatcher` determines availability and invokes tools.
 
 ### Rules for `execute()` parameters
 
-| Parameter type          | Source              | Availability rule                                                                       |
-|-------------------------|---------------------|-----------------------------------------------------------------------------------------|
-| Registered context type | `ToolContext`       | Required (`Type $x`) → tool unavailable if missing. Optional (`?Type $x = null`) → always available. |
-| `ToolIO`                | Framework-injected  | Always provided.                                                                        |
-| `ContentRepository`     | Framework-injected  | Always provided (resolved from context `cr`).                                           |
+| Parameter type            | Source              | Availability rule                                                                         |
+|---------------------------|---------------------|-------------------------------------------------------------------------------------------|
+| Registered context type   | `ToolContext` bag   | Required (`Type $x`) → tool unavailable if missing. Optional (`?Type $x = null`) → always |
+| `ToolIOInterface`         | Framework-injected  | Always provided                                                                           |
+| `ToolContext`             | Framework-injected  | Always provided (the full context bag)                                                    |
+| Derived type              | Derived resolver    | Resolved lazily from context; null = unavailable                                          |
 
-The dispatcher:
-1. Iterates all injected `ToolInterface` implementations (DI-discovered).
-2. **On boot / first use**: validates every tool's `execute()` signature. Each parameter type must be either a framework-injected type (`ToolIO`, `ContentRepository`) or a type registered in `ToolContextRegistry`. Any unrecognised type raises an error immediately (not silently ignored at runtime). This catches misconfigured tools — wrong class names, forgotten registry entries — before the session starts.
-3. For each tool at runtime: matches required context-typed params against current context.
-4. Builds the available-tool list.
-5. On user selection: resolves all params (from context + framework), calls `execute()`.
+### Derived resolvers
 
-### Example tool signatures — `@api`
+The dispatcher accepts an optional `$derivedResolvers` map: `array<class-string, Closure(ToolContext): ?object>`. These are **not** a generic services map — they are lazy computations that derive framework types from context values. Currently registered:
+
+| Derived type                 | Resolved from                          | Available when           |
+|------------------------------|----------------------------------------|--------------------------|
+| `ContentRepository`          | `ContentRepositoryId`                  | Always (cr defaults)     |
+| `ContentGraphInterface`      | `ContentRepositoryId` + `WorkspaceName`| CR + workspace set       |
+| `ContentSubgraphInterface`   | CR + `WorkspaceName` + `DimensionSpacePoint` | CR + workspace + DSP set |
+
+Other dependencies in tools (e.g. database, external services) use standard Flow `#[Flow\Inject]` property injection — tools are Flow-managed objects.
+
+### Example tool signatures
 
 ```php
-// Available any time
-public function execute(ToolIO $io, ContentRepository $cr): ?ToolContext
+// Always available (no context params)
+public function execute(ToolIOInterface $io, ToolContext $context): ?ToolContext
 
-// Available only when a node is in context
-public function execute(ToolIO $io, ContentRepository $cr, NodeAggregateId $node): ?ToolContext
+// Available when CR + workspace set (ContentGraphInterface derived)
+public function execute(ToolIOInterface $io, ContentGraphInterface $cg, NodeAggregateId $node): ?ToolContext
 
-// Available when node is set; uses DSP if present, works without it
-public function execute(ToolIO $io, ContentRepository $cr, NodeAggregateId $node, ?DimensionSpacePoint $dsp = null): ?ToolContext
+// Available when CR + workspace + DSP set (ContentSubgraphInterface derived)
+public function execute(ToolIOInterface $io, ContentSubgraphInterface $sg, NodeAggregateId $node): ?ToolContext
+
+// Derived type + context type
+public function execute(ToolIOInterface $io, ContentRepository $cr, NodeAggregateId $node): ?ToolContext
 ```
 
-Return value: `null` = context unchanged (stay); `ToolContext` = updated context. Tools always build on the received context via `$context->with(...)` / `$context->without(...)` — never construct a blank one. This preserves unrelated slots (e.g. `SetNodeByUuid` keeps the existing `dsp` and `workspace` in context).
+Return: `null` = context unchanged; `ToolContext` = updated context (built via `$context->with(...)`). Return `ExploreSession::exit()` to end the session.
 
 ---
 
-## ToolIO — Transport Abstraction — `@api`
-
-Tools communicate (output and interaction) exclusively through `ToolIO`. This is what allows the same tool code to run under CLI, web, and MCP.
+## ToolIOInterface — Transport Abstraction — `@api`
 
 ```php
-interface ToolIO
+interface ToolIOInterface
 {
-    // --- Output ---
     public function writeTable(array $headers, array $rows): void;
-    public function writeKeyValue(array $pairs): void;      // single record, key→value
+    public function writeKeyValue(array $pairs): void;
     public function writeLine(string $text = ''): void;
     public function writeError(string $message): void;
-
-    // --- Interaction ---
-
-    /**
-     * Free-text prompt. Returns the entered string.
-     *
-     * The optional $autocomplete callback receives the current partial input and
-     * returns a list of suggestions. This enables live DB queries — e.g. matching
-     * node UUIDs or node type names as the user types.
-     *
-     * CLI: backed by Symfony Console autocomplete on the Question.
-     * Web/MCP: transport may implement as live search / typeahead.
-     *
-     * @param callable(string $partial): string[] $autocomplete
-     */
     public function ask(string $question, ?callable $autocomplete = null): string;
-
-    /**
-     * Present a list of labelled choices. Returns the selected key.
-     * @param array<string, string> $choices  key => label
-     */
     public function choose(string $question, array $choices): string;
 }
 ```
 
-Implementations (`@internal` — tool authors never reference these):
-- **`CliToolIO`** — Symfony Console `OutputInterface` + `QuestionHelper`.
-- **`WebToolIO`** _(future)_ — streams output via SSE/WebSocket; collects interaction via request/response cycle.
-- **`McpToolIO`** _(future)_ — wraps MCP protocol messages.
-
-Tools never reference `InputInterface`, `OutputInterface`, or any transport-specific class directly.
+Implementations: `CliToolIO` (Symfony Console). Future: web, MCP.
 
 ---
 
 ## Session Loop — `@internal`
 
-`ExploreSession` is transport-agnostic. `CrExploreCommandController` creates `CliToolIO`, builds initial `ToolContext` from CLI args, and calls `ExploreSession::run()`.
+`ExploreSession` is transport-agnostic.
 
 ```
 loop:
-  1. Collect available tools via ToolDispatcher
-  2. Show numbered menu (getMenuLabel per tool)
-  3. Ask user to pick a number  [ToolIO::choose]
-  4. Run selected tool (dispatcher resolves params, calls execute())
-  5. If execute() returned a new ToolContext, replace current
-  6. go to 1
+  1. Call contextRenderer (if set) — displays current context state
+  2. Collect available tools via ToolDispatcher
+  3. Mark newly available tools with ★ prefix
+  4. Show numbered menu via ToolIOInterface::choose()
+  5. Print tool headline (--- Tool Name ---)
+  6. Run selected tool (dispatcher resolves params, calls execute())
+  7. If execute() returned ExploreSession::exit(), stop
+  8. If execute() returned a new ToolContext, replace current
+  9. go to 1
 ```
 
-Exit handling is itself a tool:
-- **`ExitTool`**: always available as `[0] Exit`.
-
-`ShowResumeCommand` is a regular numbered menu entry. When selected, it prints `./flow cr:explore <serialized context>` and returns null (context unchanged).
+The `contextRenderer` is an optional `Closure(ToolContext, ToolIOInterface): void` passed at construction. The controller uses it to print `=== cr=default | node=... ===` before each menu.
 
 ---
 
 ## Command Interface
 
 ```bash
-# Start fresh
 ./flow cr:explore
-
-# Resume / start with known context
 ./flow cr:explore --node=1234-5678-4232
-./flow cr:explore --node=1234-5678-4232 --dsp=language:de --workspace=live
+./flow cr:explore --node=1234-5678-4232 --workspace=live --dsp='{"language":"en"}'
 ./flow cr:explore --cr=myContentRepository --node=1234-5678-4232
 ```
 
-CLI options are generated dynamically from the context registry — one `--{name}` option per registered type. No hardcoded option list in the command controller.
-
 ---
 
-## V1 Tools
+## Implemented Tools
 
-### Entry / navigation (return updated ToolContext, built on existing)
+### Entry (return updated ToolContext)
 
-| Tool                   | Signature (context params)                          | Effect                                                              |
-|------------------------|-----------------------------------------------------|---------------------------------------------------------------------|
-| `SetNodeByUuid`        | _(none)_                                            | `ask()` for UUID → `$context->with('node', ...)` (keeps dsp, ws…)  |
-| `ChooseDimension`      | `NodeAggregateId $node`                             | `choose()` from available DSPs → `$context->with('dsp', ...)`      |
-| `GoToParentNode`       | `NodeAggregateId $node, DimensionSpacePoint $dsp`   | Subgraph lookup → `$context->with('node', $parent)` (keeps dsp)    |
-| `GoBack`               | _(none)_                                            | `$context->without(...)` — removes most-recently-added slot         |
+| Tool                  | Execute params                                                        | Effect                                                    |
+|-----------------------|-----------------------------------------------------------------------|-----------------------------------------------------------|
+| `SetNodeByUuidTool`   | `ToolIOInterface $io, ToolContext $context`                           | `ask()` UUID → `$context->withFromString('node', ...)`    |
+| `ChooseWorkspaceTool`  | `ToolIOInterface $io, ToolContext $context, ContentRepository $cr`   | `choose()` from CR workspaces → sets workspace            |
+| `ChooseDimensionTool`  | `ToolIOInterface $io, ToolContext $context, ContentGraphInterface $cg, NodeAggregateId $node` | `choose()` from node's covered DSPs → sets dsp |
 
-### Inspections / read-only (return null)
+### Inspection (return null)
 
-| Tool                    | Signature (context params)                              | Output                                       |
-|-------------------------|---------------------------------------------------------|----------------------------------------------|
-| `NodeIdentity`          | `NodeAggregateId $node`                                 | ID, node type, path, parent aggregate IDs    |
-| `NodeProperties`        | `NodeAggregateId $node, DimensionSpacePoint $dsp`       | All properties, JSON pretty-printed          |
-| `NodeDimensions`        | `NodeAggregateId $node`                                 | Table: DSP → origin / coverage              |
-| `NodeEvents`            | `NodeAggregateId $node`                                 | Last N events for this aggregate             |
-| `NodeRouting`           | `NodeAggregateId $node, DimensionSpacePoint $dsp`       | URI path via Neos routing                    |
+| Tool                  | Execute params                                                        | Output                                                    |
+|-----------------------|-----------------------------------------------------------------------|-----------------------------------------------------------|
+| `DiscoverNodeTool`     | `ToolIOInterface $io, ContentRepository $cr, NodeAggregateId $node`  | Table: workspace × node type × covered DSPs               |
+| `NodeIdentityTool`     | `ToolIOInterface $io, ContentGraphInterface $cg, NodeAggregateId $node` | ID, type, name, classification, parents                |
+| `NodeDimensionsTool`   | `ToolIOInterface $io, ContentGraphInterface $cg, NodeAggregateId $node` | Table: origin DSP → covered DSPs                       |
+| `NodePropertiesTool`   | `ToolIOInterface $io, ContentSubgraphInterface $sg, NodeAggregateId $node` | All serialized properties, JSON-formatted           |
 
-### Always available
+### Navigation (return updated ToolContext)
+
+| Tool                  | Execute params                                                        | Effect                                                    |
+|-----------------------|-----------------------------------------------------------------------|-----------------------------------------------------------|
+| `GoToParentNodeTool`   | `ToolIOInterface $io, ToolContext $context, ContentSubgraphInterface $sg, NodeAggregateId $node` | Sets node to parent |
+
+### Session (always available)
 
 | Tool                   | Effect                                                          |
 |------------------------|-----------------------------------------------------------------|
-| `ShowResumeCommand`    | Prints `./flow cr:explore <serialized context>` to resume       |
-| `ExitTool`             | Exits the session                                               |
-
----
-
-## Example Session Transcript
-
-```
-Resume: ./flow cr:explore --node=1234-5678-4232
-
-=== cr:default | node:1234-5678-4232 ===
-[1] Node: identity
-[2] Node: dimension variants
-[3] Node: events (last 20)
-[4] Choose dimension
-[5] Set node by UUID
-[6] Show resume command
-[0] Exit
-
-> 1
-
-ID:     1234-5678-4232
-Type:   Neos.NeosIo:Page
-Path:   /sites/neosio/en/blog
-Parent: abcd-efab-1111
-
-Resume: ./flow cr:explore --node=1234-5678-4232
-
-=== cr:default | node:1234-5678-4232 ===
-...
-
-> 4
-
-Available dimension space points:
-  [language=de] German
-  [language=en] English
-  [language=fr] French (specializes language=en)
-
-Choose dimension: language=de
-
-Resume: ./flow cr:explore --node=1234-5678-4232 --dsp=language:de
-
-=== cr:default | node:1234-5678-4232 | dsp:language:de ===
-[1] Node: identity
-[2] Node: properties
-[3] Node: dimension variants
-[4] Node: events (last 20)
-[5] Node: routing
-[6] Go to parent node
-[7] Choose dimension
-[8] Set node by UUID
-[9] Show resume command
-[0] Exit
-
-> 5
-
-URI: /de/blog
-```
+| `ShowResumeCommandTool`| Prints `./flow cr:explore --cr=... --node=... ...`              |
+| `ExitTool`             | Exits the session via `ExploreSession::exit()`                  |
 
 ---
 
@@ -328,81 +246,68 @@ URI: /de/blog
 
 ```
 Classes/
-  Package.php                          ← @api  registers built-in context types via ToolContextRegistry::register()
-
   Explore/
-    ToolContextRegistry.php            ← @api (register() only) / @internal (all lookup methods)
-    ToolContextTypeDescriptor.php      ← @internal  name, alias, FQCN, fromString, toString
-    ToolContext.php                    ← @api  generic immutable bag (name => object); getByType/hasByType are @internal
-    ToolContextSerializer.php          ← @internal  context <-> CLI arg strings
-    ExploreSession.php                 ← @internal  transport-agnostic session loop
+    ToolContextRegistry.php
+    ToolContextTypeDescriptor.php
+    ToolContext.php
+    ToolContextSerializer.php
+    ToolDispatcher.php
+    ExploreSession.php
+    ExploreSessionFactory.php         ← auto-discovers tools via ReflectionService (unused currently)
 
     IO/
-      ToolIO.php                       ← @api      interface (output + interaction)
-      CliToolIO.php                    ← @internal  Symfony Console implementation
+      ToolIOInterface.php
+      CliToolIO.php
 
     Tool/
-      ToolInterface.php                ← @api      getMenuLabel() only
-      ToolDispatcher.php               ← @internal  reflection-based matching + DI collection
+      ToolInterface.php
 
       Entry/
-        SetNodeByUuidTool.php          ← @internal
-        ChooseDimensionTool.php        ← @internal
+        SetNodeByUuidTool.php
+        ChooseWorkspaceTool.php
+        ChooseDimensionTool.php
       Navigation/
-        GoToParentNodeTool.php         ← @internal
-        GoBackTool.php                 ← @internal
+        GoToParentNodeTool.php
       Node/
-        NodeIdentityTool.php           ← @internal
-        NodePropertiesTool.php         ← @internal
-        NodeDimensionsTool.php         ← @internal
-        NodeEventsTool.php             ← @internal
-        NodeRoutingTool.php            ← @internal
+        DiscoverNodeTool.php
+        NodeIdentityTool.php
+        NodePropertiesTool.php
+        NodeDimensionsTool.php
       Session/
-        ShowResumeCommandTool.php      ← @internal
-        ExitTool.php                   ← @internal
+        ShowResumeCommandTool.php
+        ExitTool.php
 
   Command/
-    CrExploreCommandController.php     ← @internal  parse args → ToolContext, create CliToolIO, call ExploreSession
+    CrCommandController.php
+
+Tests/Unit/Explore/
+    ToolContextTest.php               (5 tests)
+    ToolContextRegistryTest.php       (4 tests)
+    ToolDispatcherTest.php            (11 tests)
+    ExploreSessionTest.php            (4 tests)
+    Tool/Entry/EntryToolsTest.php     (2 tests)
+    Tool/Session/SessionToolsTest.php (5 tests)
+    Tool/Node/NodeIdentityToolTest.php (3 tests)
 ```
-
-**Summary for tool authors** — the only types you need to know:
-
-| Class / Interface       | Role                                                        |
-|-------------------------|-------------------------------------------------------------|
-| `ToolInterface`         | Implement this to create a tool                             |
-| `ToolIO`                | Use this in `execute()` for all output and interaction      |
-| `ToolContext`           | Read context values from this in `getMenuLabel()`           |
-| `ToolContextRegistry`   | Call `::register()` in your `Package.php` for new context types |
 
 ---
 
-## Extensibility
+## Planned Tools (V2)
 
-### New context type (e.g. from another package)
-1. `ToolContextRegistry::register(...)` in your `Package.php`. Done.
+See `interactive_exploration_details.md` for full plan:
 
-### New tool
-1. Implement `ToolInterface` + `execute()` with required types in the signature.
-2. Flow auto-wires it into the dispatcher's collection. Done.
-
-### Script-based entry (`cr:debug` integration)
-```php
-$context = ToolContext::empty()
-    ->with('node', NodeAggregateId::fromString('1234-5678'))
-    ->with('dsp', DimensionSpacePoint::fromArray(['language' => 'de']));
-
-$session->run($context, new CliToolIO($output, $questionHelper));
-```
-
-### Future transports (web / MCP)
-Implement `ToolIO` for the target transport. Pass to `ExploreSession::run()`. Zero tool changes.
+- **ChildNodesTool**: navigate into child nodes (requires subgraph + node)
+- **DocumentTreeTool**: display subtree as indented tree (requires subgraph + node)
+- **NodeTypeExplorerTool**: browse by node type, find aggregates (requires content graph)
+- **FindNodeByPathTool**: enter URL path, resolve to node (requires CR + DSP)
+- **NodeRoutingTool**: show URI path for current node (requires CR + node + DSP)
 
 ---
 
 ## Open Questions / Deferred
 
 - **`GoBack` mechanics**: snapshot stack vs. "remove last-added slot". Stack handles multi-step tools correctly.
-- **Routing from CLI**: Neos routing may assume HTTP context. May need a DB/cache-direct lookup instead.
-- **`NodeEvents` stream name**: verify format against live event store data before implementing.
-- **Workspace default**: `WorkspaceName::forLive()` when not in context; add workspace-selection tool later.
-- **Tool ordering in menu**: registration order, alphabetical, or `#[ToolPriority(n)]` attribute.
+- **SiteNodeName for routing**: `FindNodeByPathTool` needs SiteNodeName — auto-detect or add as context type?
+- **DocumentUriPathFinder availability**: Not all setups have the Neos routing projection. Handle gracefully.
+- **NodeEvents**: Need to determine event store stream name format for per-aggregate events.
+- **Tool ordering**: currently manual in controller; could use `#[ToolPriority(n)]` attribute or auto-discovery via `ExploreSessionFactory`.

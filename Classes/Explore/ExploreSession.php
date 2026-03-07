@@ -41,8 +41,9 @@ final class ExploreSession
 
     public function run(ToolContext $context, ToolIOInterface $io): void
     {
-        /** @var array<class-string, true>|null $previousToolSet null on first iteration (don't mark anything as new) */
-        $previousToolSet = null;
+        // Tool set at last context change — ★ markers stay until context changes again
+        /** @var array<class-string, true>|null $baselineToolSet null on first iteration (don't mark anything as new) */
+        $baselineToolSet = null;
 
         while (true) {
             if ($this->contextRenderer !== null) {
@@ -54,22 +55,17 @@ final class ExploreSession
             $choices = [];
             foreach ($available as $i => $tool) {
                 $label = $tool->getMenuLabel($context);
-                if ($previousToolSet !== null && !isset($previousToolSet[$tool::class])) {
+                if ($baselineToolSet !== null && !isset($baselineToolSet[$tool::class])) {
                     $label = '★ ' . $label;
                 }
                 $choices[(string)$i] = $label;
-            }
-
-            $previousToolSet = [];
-            foreach ($available as $tool) {
-                $previousToolSet[$tool::class] = true;
             }
 
             $selected = $io->choose('Choose a tool', $choices);
             $tool = $available[(int)$selected];
 
             $io->writeLine('');
-            $io->writeLine('--- ' . $tool->getMenuLabel($context) . ' ---');
+            $io->writeLine('<info>--- ' . $tool->getMenuLabel($context) . ' ---</info>');
 
             $result = $this->dispatcher->execute($tool, $context, $io);
 
@@ -79,6 +75,17 @@ final class ExploreSession
 
             if ($result !== null) {
                 $context = $result;
+                // Context changed — snapshot current tool set as new baseline for ★ markers
+                $baselineToolSet = [];
+                foreach ($available as $t) {
+                    $baselineToolSet[$t::class] = true;
+                }
+            } elseif ($baselineToolSet === null) {
+                // First iteration complete — snapshot so we can detect changes on next round
+                $baselineToolSet = [];
+                foreach ($available as $t) {
+                    $baselineToolSet[$t::class] = true;
+                }
             }
         }
     }

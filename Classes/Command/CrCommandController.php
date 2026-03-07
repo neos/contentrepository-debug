@@ -15,12 +15,16 @@ use Neos\ContentRepository\Debug\Explore\ExploreSession;
 use Neos\ContentRepository\Debug\Explore\IO\CliToolIO;
 use Neos\ContentRepository\Debug\Explore\Tool\Entry\ChooseDimensionTool;
 use Neos\ContentRepository\Debug\Explore\Tool\Entry\ChooseWorkspaceTool;
+use Neos\ContentRepository\Debug\Explore\Tool\Entry\FindNodeByPathTool;
+use Neos\ContentRepository\Debug\Explore\Tool\Entry\NodeTypeExplorerTool;
 use Neos\ContentRepository\Debug\Explore\Tool\Entry\SetNodeByUuidTool;
 use Neos\ContentRepository\Debug\Explore\Tool\Navigation\GoToParentNodeTool;
+use Neos\ContentRepository\Debug\Explore\Tool\Node\ChildNodesTool;
 use Neos\ContentRepository\Debug\Explore\Tool\Node\DiscoverNodeTool;
 use Neos\ContentRepository\Debug\Explore\Tool\Node\NodeDimensionsTool;
 use Neos\ContentRepository\Debug\Explore\Tool\Node\NodeIdentityTool;
 use Neos\ContentRepository\Debug\Explore\Tool\Node\NodePropertiesTool;
+use Neos\ContentRepository\Debug\Explore\Tool\Node\NodeRoutingTool;
 use Neos\ContentRepository\Debug\Explore\Tool\Session\ExitTool;
 use Neos\ContentRepository\Debug\Explore\Tool\Session\ShowResumeCommandTool;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
@@ -100,9 +104,13 @@ class CrCommandController extends CommandController
             new NodeIdentityTool(),
             new NodePropertiesTool(),
             new NodeDimensionsTool(),
+            new NodeRoutingTool(),
+            new ChildNodesTool(),
+            new NodeTypeExplorerTool(),
             new ChooseWorkspaceTool(),
             new ChooseDimensionTool(),
             new GoToParentNodeTool(),
+            $this->objectManager->get(FindNodeByPathTool::class),
             new SetNodeByUuidTool(),
             new ShowResumeCommandTool($serializer),
             new ExitTool(),
@@ -142,7 +150,7 @@ class CrCommandController extends CommandController
                 $parts[] = "$name=$value";
             }
             $io->writeLine('');
-            $io->writeLine('=== ' . ($parts !== [] ? implode(' | ', $parts) : '(empty context)') . ' ===');
+            $io->writeLine('<comment>=== ' . ($parts !== [] ? implode(' | ', $parts) : '(empty context)') . ' ===</comment>');
         };
         $session = new ExploreSession($dispatcher, $contextRenderer);
         $io = new CliToolIO($this->output);
