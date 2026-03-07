@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Neos\ContentRepository\Debug\Explore\Tool\Entry;
 
+use Neos\ContentRepository\Core\ContentRepository;
+use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphInterface;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
@@ -11,27 +13,63 @@ use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
 
 /**
- * @internal Presents the covered dimension space points for the current node and sets the chosen DSP in context.
+ * @internal Sets the dimension space point in context. When a node is selected, offers its covered DSPs;
+ *           otherwise lists all allowed DSPs from the variation graph.
  *
- * @see ContentGraphInterface::findNodeAggregateById() to look up dimension coverage.
+ * @see ContentRepository::getVariationGraph() for discovering all allowed DSPs.
+ * @see ContentGraphInterface::findNodeAggregateById() for node-specific dimension coverage.
  */
 final class ChooseDimensionTool implements ToolInterface
 {
     public function getMenuLabel(ToolContext $context): string
     {
-        return 'Choose dimension';
+        return 'Set dimension';
     }
 
-    public function execute(ToolIOInterface $io, ToolContext $context, ContentGraphInterface $contentGraph, NodeAggregateId $node): ?ToolContext
-    {
-        $aggregate = $contentGraph->findNodeAggregateById($node);
-        if ($aggregate === null) {
-            $io->writeError(sprintf('Node aggregate "%s" not found.', $node->value));
+    public function execute(
+        ToolIOInterface $io,
+        ToolContext $context,
+        ContentRepository $cr,
+        ?ContentGraphInterface $contentGraph = null,
+        ?NodeAggregateId $node = null,
+    ): ?ToolContext {
+        $choices = $this->buildChoices($io, $cr, $contentGraph, $node);
+        if ($choices === null) {
             return null;
         }
 
+        $selected = $io->choose('Choose dimension space point', $choices);
+        $io->writeLine(sprintf('✔ Dimension set to: %s', $selected));
+
+        return $context->withFromString('dsp', $selected);
+    }
+
+    /** @return array<string, string>|null */
+    private function buildChoices(
+        ToolIOInterface $io,
+        ContentRepository $cr,
+        ?ContentGraphInterface $contentGraph,
+        ?NodeAggregateId $node,
+    ): ?array {
+        // When node + workspace are available, show only covered DSPs
+        if ($contentGraph !== null && $node !== null) {
+            $aggregate = $contentGraph->findNodeAggregateById($node);
+            if ($aggregate !== null) {
+                $choices = [];
+                foreach ($aggregate->coveredDimensionSpacePoints as $dsp) {
+                    $choices[$dsp->toJson()] = $dsp->toJson();
+                }
+                if ($choices !== []) {
+                    return $choices;
+                }
+            }
+        }
+
+        // Fallback: all allowed DSPs from variation graph
+        $allDsps = $cr->getVariationGraph()->getDimensionSpacePoints();
         $choices = [];
-        foreach ($aggregate->coveredDimensionSpacePoints as $dsp) {
+        foreach ($allDsps as $dsp) {
+            /** @var DimensionSpacePoint $dsp */
             $choices[$dsp->toJson()] = $dsp->toJson();
         }
 
@@ -40,9 +78,6 @@ final class ChooseDimensionTool implements ToolInterface
             return null;
         }
 
-        $selected = $io->choose('Choose dimension space point', $choices);
-        $io->writeLine(sprintf('✔ Dimension set to: %s', $selected));
-
-        return $context->withFromString('dsp', $selected);
+        return $choices;
     }
 }

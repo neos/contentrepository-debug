@@ -5,33 +5,55 @@ declare(strict_types=1);
 namespace Neos\ContentRepository\Debug\Explore\Tool\Navigation;
 
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentSubgraphInterface;
+use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindAncestorNodesFilter;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
 
 /**
- * @internal Navigates to the parent node in the current subgraph, replacing the node context value.
+ * @internal Shows all ancestor nodes as a breadcrumb path and lets the user navigate to any of them.
  *
- * @see ContentSubgraphInterface::findParentNode() for the underlying lookup.
+ * @see ContentSubgraphInterface::findAncestorNodes() for the underlying lookup.
  */
 final class GoToParentNodeTool implements ToolInterface
 {
     public function getMenuLabel(ToolContext $context): string
     {
-        return 'Go to parent node';
+        return 'Navigate to ancestor';
     }
 
     public function execute(ToolIOInterface $io, ToolContext $context, ContentSubgraphInterface $subgraph, NodeAggregateId $node): ?ToolContext
     {
-        $parent = $subgraph->findParentNode($node);
-        if ($parent === null) {
-            $io->writeError('Current node has no parent (root node).');
+        $ancestors = $subgraph->findAncestorNodes($node, FindAncestorNodesFilter::create());
+        $ancestorList = iterator_to_array($ancestors);
+
+        if ($ancestorList === []) {
+            $io->writeError('Current node has no ancestors (root node).');
             return null;
         }
 
-        $io->writeLine(sprintf('→ %s (%s)', $parent->aggregateId->value, $parent->nodeTypeName->value));
+        // Display breadcrumb: closest parent first, root last
+        $io->writeLine('');
+        $rows = [];
+        $choices = ['_stay' => '(stay here)'];
+        foreach ($ancestorList as $i => $ancestor) {
+            $id = $ancestor->aggregateId->value;
+            $name = $ancestor->name?->value ?? '-';
+            $type = $ancestor->nodeTypeName->value;
+            $depth = $i + 1;
+            $rows[] = [$depth, $name, $type, $id];
+            $choices[$id] = sprintf('%s%s (%s)', str_repeat('  ', $i), $name, $type);
+        }
 
-        return $context->with('node', $parent->aggregateId);
+        $io->writeTable(['Depth', 'Name', 'Type', 'ID'], $rows);
+
+        $selected = $io->choose('Navigate to ancestor', $choices);
+        if ($selected === '_stay') {
+            return null;
+        }
+
+        $io->writeLine(sprintf('✔ Node set to: %s', $selected));
+        return $context->with('node', NodeAggregateId::fromString($selected));
     }
 }

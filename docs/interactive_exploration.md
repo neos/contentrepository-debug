@@ -217,6 +217,8 @@ The `contextRenderer` is an optional `Closure(ToolContext, ToolIOInterface): voi
 | `SetNodeByUuidTool`   | `ToolIOInterface $io, ToolContext $context`                           | `ask()` UUID → `$context->withFromString('node', ...)`    |
 | `ChooseWorkspaceTool`  | `ToolIOInterface $io, ToolContext $context, ContentRepository $cr`   | `choose()` from CR workspaces → sets workspace            |
 | `ChooseDimensionTool`  | `ToolIOInterface $io, ToolContext $context, ContentGraphInterface $cg, NodeAggregateId $node` | `choose()` from node's covered DSPs → sets dsp |
+| `NodeTypeExplorerTool` | `ToolIOInterface $io, ToolContext $context, ContentGraphInterface $cg` | Browse node types → list aggregates → navigate to one |
+| `FindNodeByPathTool`   | `ToolIOInterface $io, ToolContext $context, ContentRepository $cr, DimensionSpacePoint $dsp` | Resolve URL path to node via routing projection |
 
 ### Inspection (return null)
 
@@ -226,12 +228,15 @@ The `contextRenderer` is an optional `Closure(ToolContext, ToolIOInterface): voi
 | `NodeIdentityTool`     | `ToolIOInterface $io, ContentGraphInterface $cg, NodeAggregateId $node` | ID, type, name, classification, parents                |
 | `NodeDimensionsTool`   | `ToolIOInterface $io, ContentGraphInterface $cg, NodeAggregateId $node` | Table: origin DSP → covered DSPs                       |
 | `NodePropertiesTool`   | `ToolIOInterface $io, ContentSubgraphInterface $sg, NodeAggregateId $node` | All serialized properties, JSON-formatted           |
+| `NodeRoutingTool`      | `ToolIOInterface $io, ContentRepository $cr, NodeAggregateId $node, DimensionSpacePoint $dsp` | URI path, disabled status, shortcut target |
 
 ### Navigation (return updated ToolContext)
 
 | Tool                  | Execute params                                                        | Effect                                                    |
 |-----------------------|-----------------------------------------------------------------------|-----------------------------------------------------------|
 | `GoToParentNodeTool`   | `ToolIOInterface $io, ToolContext $context, ContentSubgraphInterface $sg, NodeAggregateId $node` | Sets node to parent |
+| `ChildNodesTool`       | `ToolIOInterface $io, ToolContext $context, ContentSubgraphInterface $sg, NodeAggregateId $node` | Lists children, navigate into one |
+| `DocumentTreeTool`     | `ToolIOInterface $io, ToolContext $context, ContentSubgraphInterface $sg, ContentRepository $cr, NodeAggregateId $node, DimensionSpacePoint $dsp` | Renders subtree with URI paths, navigate to child |
 
 ### Session (always available)
 
@@ -266,6 +271,8 @@ Classes/
         SetNodeByUuidTool.php
         ChooseWorkspaceTool.php
         ChooseDimensionTool.php
+        NodeTypeExplorerTool.php
+        FindNodeByPathTool.php
       Navigation/
         GoToParentNodeTool.php
       Node/
@@ -273,6 +280,9 @@ Classes/
         NodeIdentityTool.php
         NodePropertiesTool.php
         NodeDimensionsTool.php
+        NodeRoutingTool.php
+        ChildNodesTool.php
+        DocumentTreeTool.php
       Session/
         ShowResumeCommandTool.php
         ExitTool.php
@@ -292,15 +302,9 @@ Tests/Unit/Explore/
 
 ---
 
-## Planned Tools (V2)
+## Notes
 
-See `interactive_exploration_details.md` for full plan:
-
-- **ChildNodesTool**: navigate into child nodes (requires subgraph + node)
-- **DocumentTreeTool**: display subtree as indented tree (requires subgraph + node)
-- **NodeTypeExplorerTool**: browse by node type, find aggregates (requires content graph)
-- **FindNodeByPathTool**: enter URL path, resolve to node (requires CR + DSP)
-- **NodeRoutingTool**: show URI path for current node (requires CR + node + DSP)
+- **Security bypass**: The `ContentSubgraphInterface` derived resolver uses `VisibilityConstraints::createEmpty()` via `ContentGraph::getSubgraph()` instead of `ContentRepository::getContentSubgraph()`, because the latter triggers `AuthProvider::getVisibilityConstraints()` which requires an initialized `SecurityContext` — unavailable in CLI.
 
 ---
 

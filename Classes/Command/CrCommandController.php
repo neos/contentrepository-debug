@@ -7,6 +7,7 @@ use Neos\ContentRepository\Core\ContentRepository;
 use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentSubgraphInterface;
+use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
@@ -20,10 +21,15 @@ use Neos\ContentRepository\Debug\Explore\Tool\Entry\NodeTypeExplorerTool;
 use Neos\ContentRepository\Debug\Explore\Tool\Entry\SetNodeByUuidTool;
 use Neos\ContentRepository\Debug\Explore\Tool\Navigation\GoToParentNodeTool;
 use Neos\ContentRepository\Debug\Explore\Tool\Node\ChildNodesTool;
+use Neos\ContentRepository\Debug\Explore\Tool\Node\ContentTreeTool;
 use Neos\ContentRepository\Debug\Explore\Tool\Node\DiscoverNodeTool;
+use Neos\ContentRepository\Debug\Explore\Tool\Node\DocumentTreeTool;
+use Neos\ContentRepository\Debug\Explore\Tool\Node\PageHistoryTool;
 use Neos\ContentRepository\Debug\Explore\Tool\Node\NodeDimensionsTool;
+use Neos\ContentRepository\Debug\Explore\Tool\Node\NodeHistoryTool;
 use Neos\ContentRepository\Debug\Explore\Tool\Node\NodeIdentityTool;
 use Neos\ContentRepository\Debug\Explore\Tool\Node\NodePropertiesTool;
+use Neos\ContentRepository\Debug\Explore\Tool\Node\NodeReferencesTool;
 use Neos\ContentRepository\Debug\Explore\Tool\Node\NodeRoutingTool;
 use Neos\ContentRepository\Debug\Explore\Tool\Session\ExitTool;
 use Neos\ContentRepository\Debug\Explore\Tool\Session\ShowResumeCommandTool;
@@ -105,7 +111,12 @@ class CrCommandController extends CommandController
             new NodePropertiesTool(),
             new NodeDimensionsTool(),
             new NodeRoutingTool(),
+            new NodeReferencesTool(),
+            $this->objectManager->get(NodeHistoryTool::class),
+            $this->objectManager->get(PageHistoryTool::class),
             new ChildNodesTool(),
+            new ContentTreeTool(),
+            new DocumentTreeTool(),
             new NodeTypeExplorerTool(),
             new ChooseWorkspaceTool(),
             new ChooseDimensionTool(),
@@ -131,6 +142,8 @@ class CrCommandController extends CommandController
                 }
                 return $crRegistry->get($crId)->getContentGraph($ws);
             },
+            // Bypass AuthProvider::getVisibilityConstraints() which requires an initialized
+            // SecurityContext — unavailable in CLI. Use empty constraints to see all nodes.
             ContentSubgraphInterface::class => static function (ToolContext $ctx) use ($crRegistry): ?ContentSubgraphInterface {
                 $crId = $ctx->getByType(ContentRepositoryId::class);
                 $ws = $ctx->getByType(WorkspaceName::class);
@@ -138,7 +151,7 @@ class CrCommandController extends CommandController
                 if (!$crId instanceof ContentRepositoryId || !$ws instanceof WorkspaceName || !$dsp instanceof DimensionSpacePoint) {
                     return null;
                 }
-                return $crRegistry->get($crId)->getContentSubgraph($ws, $dsp);
+                return $crRegistry->get($crId)->getContentGraph($ws)->getSubgraph($dsp, VisibilityConstraints::createEmpty());
             },
         ];
 

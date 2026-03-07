@@ -44,9 +44,11 @@ final class CliToolIO implements ToolIOInterface
 
     public function choose(string $question, array $choices): string
     {
-        // Flow's select() returns the value (label), not the key.
-        // We pass the original keys so Symfony shows [key] label, and returns the label.
+        // Flow's select() may return either the key or the label depending on user input.
         $selected = $this->console->select($question, $choices);
+        if (isset($choices[$selected])) {
+            return (string)$selected;
+        }
         $flipped = array_flip($choices);
         return (string)$flipped[$selected];
     }

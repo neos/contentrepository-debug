@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Neos\ContentRepository\Debug\Explore;
 
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
+use Neos\ContentRepository\Debug\Explore\Tool\AutoRunToolInterface;
 
 /**
  * @internal Transport-agnostic session loop — construct with a {@see ToolDispatcher}, then call run()
@@ -51,6 +52,17 @@ final class ExploreSession
             }
 
             $available = $this->dispatcher->availableTools($context);
+
+            // Auto-run tools that became newly available (e.g. NodeIdentityTool on node change)
+            if ($baselineToolSet !== null) {
+                foreach ($available as $tool) {
+                    if ($tool instanceof AutoRunToolInterface && !isset($baselineToolSet[$tool::class])) {
+                        $io->writeLine('');
+                        $io->writeLine('<info>--- ' . $tool->getMenuLabel($context) . ' ---</info>');
+                        $this->dispatcher->execute($tool, $context, $io);
+                    }
+                }
+            }
 
             $choices = [];
             foreach ($available as $i => $tool) {
