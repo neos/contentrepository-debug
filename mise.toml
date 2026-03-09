@@ -19,6 +19,9 @@ run = 'docker compose -f ../../../docker-compose.yml exec neos bash -c "cd /app 
 description = "Run the interactive CR explorer (pass args after --: mise run cr:explore -- --node=abc)"
 run = 'docker compose -f ../../../docker-compose.yml exec neos bash -c "cd /app && ./flow cr:explore $@"'
 
-[tasks."test:functional"]
-description = "Run functional tests (usage: mise run test:functional [Tests/Functional/Explore/ExploreSmokeTest.php])"
-run = 'docker compose -f ../../../docker-compose.yml exec -e FLOW_CONTEXT=Testing neos bash -c "cd /app && bin/phpunit -c Build/BuildEssentials/PhpUnit/FunctionalTests.xml --colors DistributionPackages/Neos.ContentRepository.Debug/${1:-Tests/Functional/}"'
+[tasks."test:behavior"]
+description = "Run behavioral tests (usage: mise run test:behavior [Features/ContentRepository/NodeDisabling.feature])"
+usage = '''
+arg "[testparams]" var=#true
+'''
+run = 'docker compose -f ../../../docker-compose.yml exec -e FLOW_CONTEXT=Testing/Behat neos bash -c "cd /app && FLOW_CONTEXT=Testing/Behat ./flow doctrine:migrate && bin/behat -c Packages/Application/Neos.ContentRepository.Debug/Tests/Behavior/behat.yml.dist ${usage_testparams}"'

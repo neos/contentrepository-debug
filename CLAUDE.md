@@ -2,6 +2,8 @@
 - Lint (syntax check all PHP files): `mise run lint`
 - Run all unit tests: `mise run test`
 - Run a specific test file: `mise run test:unit Tests/Unit/Explore/ToolContextTest.php`
+- Run all behavioral tests: `mise run test:behavior`
+- Run a specific behavioral test file: `mise run test:behavior Features/ContentRepository/NodeDisabling.feature`
 - **Always lint before and after editing PHP files.**
 - TRY TO NOT RUN RAW COMMANDS — use mise tasks instead. ASK before changing mise task definitions.
 
@@ -18,6 +20,11 @@ Coding practices:
 - Use modern PHP 8.4 syntax.
 - Interfaces should end with "Interface" (e.g `ContentGraphProjectionInterface`)
 - SMALL, WELL REVIEWABLE, SELF DESCRIBING COMMITS. You can create commits (but let me know), but DO NOT PUSH THEM.
+
+Testing:
+- Behavioral tests use `ExploreSessionFactory` for all session wiring — **never copy production wiring code into test code.**
+- Assert observable behavior (user-visible output, context state) — not internal strings like table headers, debug messages, or framework class names.
+- Use the real SUT: test through the actual tool + dispatcher stack, not mocks of production internals.
 
 Explore tool architecture (see `docs/interactive_exploration.md` for full design):
 - Tools implement `ToolInterface` — only `getMenuLabel()` is in the interface; `execute()` is discovered by reflection.

@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Neos\ContentRepository\Debug\Explore;
 
+use Neos\Flow\Annotations as Flow;
+
 /**
  * @internal Converts a {@see ToolContext} to/from an associative string array for CLI arguments,
  *           using the {@see ToolContextRegistry}'s fromString/toString callbacks.
  */
 
+#[Flow\Scope("singleton")]
 final class ToolContextSerializer
 {
     public function __construct(private readonly ToolContextRegistry $registry) {}

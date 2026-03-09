@@ -34,15 +34,14 @@ class SessionToolsTest extends TestCase
 
     public function test_show_resume_command_label(): void
     {
-        $registry = new ToolContextRegistry();
-        $tool = new ShowResumeCommandTool(new ToolContextSerializer($registry));
+        $tool = new ShowResumeCommandTool();
         self::assertSame('Show resume command', $tool->getMenuLabel(ToolContext::empty()));
     }
 
     public function test_show_resume_command_prints_bare_command_for_empty_context(): void
     {
         $registry = new ToolContextRegistry();
-        $tool = new ShowResumeCommandTool(new ToolContextSerializer($registry));
+        $tool = self::makeShowResumeCommandTool(new ToolContextSerializer($registry));
         $io = new SpyToolIO();
 
         $result = $tool->execute($io, ToolContext::empty());
@@ -61,13 +60,20 @@ class SessionToolsTest extends TestCase
             fromString: fn(string $s) => new FakeNodeId($s),
             toString: fn(FakeNodeId $v) => $v->value,
         );
-        $tool = new ShowResumeCommandTool(new ToolContextSerializer($registry));
+        $tool = self::makeShowResumeCommandTool(new ToolContextSerializer($registry));
         $io = new SpyToolIO();
         $ctx = ToolContext::empty()->with('node', new FakeNodeId('abc-123'));
 
         $tool->execute($io, $ctx);
 
         self::assertStringContainsString('--node=abc-123', $io->lastLine);
+    }
+
+    private static function makeShowResumeCommandTool(ToolContextSerializer $serializer): ShowResumeCommandTool
+    {
+        $tool = new ShowResumeCommandTool();
+        (new \ReflectionProperty($tool, 'serializer'))->setValue($tool, $serializer);
+        return $tool;
     }
 }
 

@@ -8,6 +8,7 @@ use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
 use Neos\ContentRepository\Debug\Explore\ToolContextSerializer;
+use Neos\Flow\Annotations as Flow;
 
 /**
  * @internal Always-available tool that prints the CLI invocation needed to resume the current session.
@@ -16,7 +17,8 @@ use Neos\ContentRepository\Debug\Explore\ToolContextSerializer;
 
 final class ShowResumeCommandTool implements ToolInterface
 {
-    public function __construct(private readonly ToolContextSerializer $serializer) {}
+    #[Flow\Inject]
+    protected ToolContextSerializer $serializer;
 
     public function getMenuLabel(ToolContext $context): string
     {

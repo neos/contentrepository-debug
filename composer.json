@@ -7,6 +7,9 @@
         "neos/contentrepository-core": "*",
         "doctrine/dbal": "*"
     },
+    "require-dev": {
+        "neos/contentrepository-testsuite": "*"
+    },
     "autoload": {
         "psr-4": {
             "Neos\\ContentRepository\\Debug\\": "Classes"

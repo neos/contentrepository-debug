@@ -32,6 +32,7 @@ class FeatureContext implements BehatContext
     use CRTestSuiteTrait;
     use CRBehavioralTestsSubjectProvider;
     use MigrationsTrait;
+    use ExploreTrait;
 
     protected Environment $environment;
 

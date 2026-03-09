@@ -3,40 +3,13 @@
 namespace Neos\ContentRepository\Debug\Command;
 
 use Doctrine\DBAL\Connection;
-use Neos\ContentRepository\Core\ContentRepository;
-use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint;
-use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphInterface;
-use Neos\ContentRepository\Core\Projection\ContentGraph\ContentSubgraphInterface;
-use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
-use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
-use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepository\Debug\ContentRepositoryDebugger;
 use Neos\ContentRepository\Debug\Explore\ExploreSession;
+use Neos\ContentRepository\Debug\Explore\ExploreSessionFactory;
 use Neos\ContentRepository\Debug\Explore\IO\CliToolIO;
-use Neos\ContentRepository\Debug\Explore\Tool\Entry\ChooseDimensionTool;
-use Neos\ContentRepository\Debug\Explore\Tool\Entry\ChooseWorkspaceTool;
-use Neos\ContentRepository\Debug\Explore\Tool\Entry\FindNodeByPathTool;
-use Neos\ContentRepository\Debug\Explore\Tool\Entry\NodeTypeExplorerTool;
-use Neos\ContentRepository\Debug\Explore\Tool\Entry\SetNodeByUuidTool;
-use Neos\ContentRepository\Debug\Explore\Tool\Navigation\GoToParentNodeTool;
-use Neos\ContentRepository\Debug\Explore\Tool\Node\ChildNodesTool;
-use Neos\ContentRepository\Debug\Explore\Tool\Node\ContentTreeTool;
-use Neos\ContentRepository\Debug\Explore\Tool\Node\DiscoverNodeTool;
-use Neos\ContentRepository\Debug\Explore\Tool\Node\DocumentTreeTool;
-use Neos\ContentRepository\Debug\Explore\Tool\Node\PageHistoryTool;
-use Neos\ContentRepository\Debug\Explore\Tool\Node\NodeDimensionsTool;
-use Neos\ContentRepository\Debug\Explore\Tool\Node\NodeHistoryTool;
-use Neos\ContentRepository\Debug\Explore\Tool\Node\NodeIdentityTool;
-use Neos\ContentRepository\Debug\Explore\Tool\Node\NodePropertiesTool;
-use Neos\ContentRepository\Debug\Explore\Tool\Node\NodeReferencesTool;
-use Neos\ContentRepository\Debug\Explore\Tool\Node\NodeRoutingTool;
-use Neos\ContentRepository\Debug\Explore\Tool\Session\ExitTool;
-use Neos\ContentRepository\Debug\Explore\Tool\Session\ShowResumeCommandTool;
+use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
-use Neos\ContentRepository\Debug\Explore\ToolContextRegistry;
-use Neos\ContentRepository\Debug\Explore\ToolContextSerializer;
-use Neos\ContentRepository\Debug\Explore\ToolDispatcher;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Cli\CommandController;
 
@@ -47,6 +20,7 @@ class CrCommandController extends CommandController
     public function __construct(
         protected readonly ContentRepositoryRegistry $contentRepositoryRegistry,
         private readonly Connection                  $connection,
+        private readonly ExploreSessionFactory       $exploreSessionFactory,
     ) {
         parent::__construct();
         $this->debugger = new ContentRepositoryDebugger($this->contentRepositoryRegistry, $this->connection);
@@ -64,100 +38,16 @@ class CrCommandController extends CommandController
         ?string $workspace = null,
         ?string $dsp = null,
     ): void {
-        // -- Build context type registry --
-        $registry = new ToolContextRegistry();
-        $registry->register(
-            name: 'cr',
-            type: ContentRepositoryId::class,
-            alias: 'cr',
-            fromString: ContentRepositoryId::fromString(...),
-            toString: fn(ContentRepositoryId $v) => $v->value,
-        );
-        $registry->register(
-            name: 'node',
-            type: NodeAggregateId::class,
-            alias: 'n',
-            fromString: NodeAggregateId::fromString(...),
-            toString: fn(NodeAggregateId $v) => (string)$v,
-        );
-        $registry->register(
-            name: 'workspace',
-            type: WorkspaceName::class,
-            alias: 'ws',
-            fromString: WorkspaceName::fromString(...),
-            toString: fn(WorkspaceName $v) => (string)$v,
-        );
-        $registry->register(
-            name: 'dsp',
-            type: DimensionSpacePoint::class,
-            alias: 'dsp',
-            fromString: DimensionSpacePoint::fromJsonString(...),
-            toString: fn(DimensionSpacePoint $v) => $v->toJson(),
-        );
-
-        // -- Build initial context from CLI args --
-        $serializer = new ToolContextSerializer($registry);
-        $ctx = $serializer->deserialize(ToolContext::create($registry), array_filter([
+        $dispatcher = $this->exploreSessionFactory->buildDispatcher();
+        $ctx = $this->exploreSessionFactory->buildInitialContext([
             'cr' => $contentRepository,
             'node' => $node,
             'workspace' => $workspace,
             'dsp' => $dsp,
-        ]));
+        ]);
 
-        // -- Build tools --
-        $tools = [
-            new DiscoverNodeTool(),
-            new NodeIdentityTool(),
-            new NodePropertiesTool(),
-            new NodeDimensionsTool(),
-            new NodeRoutingTool(),
-            new NodeReferencesTool(),
-            $this->objectManager->get(NodeHistoryTool::class),
-            $this->objectManager->get(PageHistoryTool::class),
-            new ChildNodesTool(),
-            new ContentTreeTool(),
-            new DocumentTreeTool(),
-            new NodeTypeExplorerTool(),
-            new ChooseWorkspaceTool(),
-            new ChooseDimensionTool(),
-            new GoToParentNodeTool(),
-            $this->objectManager->get(FindNodeByPathTool::class),
-            new SetNodeByUuidTool(),
-            new ShowResumeCommandTool($serializer),
-            new ExitTool(),
-        ];
-
-        // -- Derived resolvers: types computed from context values --
-        $crRegistry = $this->contentRepositoryRegistry;
-        $derivedResolvers = [
-            ContentRepository::class => static function (ToolContext $ctx) use ($crRegistry): ?ContentRepository {
-                $crId = $ctx->getByType(ContentRepositoryId::class);
-                return $crId instanceof ContentRepositoryId ? $crRegistry->get($crId) : null;
-            },
-            ContentGraphInterface::class => static function (ToolContext $ctx) use ($crRegistry): ?ContentGraphInterface {
-                $crId = $ctx->getByType(ContentRepositoryId::class);
-                $ws = $ctx->getByType(WorkspaceName::class);
-                if (!$crId instanceof ContentRepositoryId || !$ws instanceof WorkspaceName) {
-                    return null;
-                }
-                return $crRegistry->get($crId)->getContentGraph($ws);
-            },
-            // Bypass AuthProvider::getVisibilityConstraints() which requires an initialized
-            // SecurityContext — unavailable in CLI. Use empty constraints to see all nodes.
-            ContentSubgraphInterface::class => static function (ToolContext $ctx) use ($crRegistry): ?ContentSubgraphInterface {
-                $crId = $ctx->getByType(ContentRepositoryId::class);
-                $ws = $ctx->getByType(WorkspaceName::class);
-                $dsp = $ctx->getByType(DimensionSpacePoint::class);
-                if (!$crId instanceof ContentRepositoryId || !$ws instanceof WorkspaceName || !$dsp instanceof DimensionSpacePoint) {
-                    return null;
-                }
-                return $crRegistry->get($crId)->getContentGraph($ws)->getSubgraph($dsp, VisibilityConstraints::createEmpty());
-            },
-        ];
-
-        // -- Wire and run session --
-        $dispatcher = new ToolDispatcher($registry, $tools, $derivedResolvers);
-        $contextRenderer = static function (ToolContext $ctx, \Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface $io) use ($serializer): void {
+        $serializer = $this->exploreSessionFactory->getSerializer();
+        $contextRenderer = static function (ToolContext $ctx, ToolIOInterface $io) use ($serializer): void {
             $parts = [];
             foreach ($serializer->serialize($ctx) as $name => $value) {
                 $parts[] = "$name=$value";
@@ -165,9 +55,9 @@ class CrCommandController extends CommandController
             $io->writeLine('');
             $io->writeLine('<comment>=== ' . ($parts !== [] ? implode(' | ', $parts) : '(empty context)') . ' ===</comment>');
         };
+
         $session = new ExploreSession($dispatcher, $contextRenderer);
-        $io = new CliToolIO($this->output);
-        $session->run($ctx, $io);
+        $session->run($ctx, new CliToolIO($this->output));
     }
 
     public function debugCommand(string $debugScript, string $contentRepository = 'default'): void
