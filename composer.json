@@ -5,7 +5,8 @@
     "license": "GPL-3.0+",
     "require": {
         "neos/contentrepository-core": "*",
-        "doctrine/dbal": "*"
+        "doctrine/dbal": "*",
+        "laravel/prompts": "*"
     },
     "suggest": {
         "sjs/flow-mcp": "Required for MCP server integration"

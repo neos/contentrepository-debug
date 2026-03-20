@@ -3,7 +3,10 @@
 declare(strict_types=1);
 
 namespace Neos\ContentRepository\Debug\Explore\IO;
+
 use Neos\Flow\Cli\ConsoleOutput;
+
+use Laravel\Prompts\MultiSelectPrompt;
 
 /**
  * @internal Adapts Flow's {@see ConsoleOutput} to the {@see ToolIOInterface} contract for interactive CLI sessions.
@@ -51,5 +54,13 @@ final class CliToolIO implements ToolIOInterface
         }
         $flipped = array_flip($choices);
         return (string)$flipped[$selected];
+    }
+
+    public function chooseMultiple(string $question, array $choices, array $default = []): array
+    {
+        // laravel/prompts multiselect: arrow keys + space to toggle, returns selected keys.
+        $selected = (new MultiSelectPrompt(label: $question, options: $choices, default: $default, scroll: 100))->prompt();
+        // Re-sort by position in $choices — laravel/prompts returns keys in toggle order, not options order.
+        return array_values(array_intersect(array_keys($choices), $selected));
     }
 }

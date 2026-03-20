@@ -101,6 +101,20 @@ trait ExploreTrait
     }
 
     /**
+     * For tools that ask() for input and then call chooseMultiple() (e.g. EventContextTool).
+     * The :keys argument is a comma-separated list of choice keys.
+     *
+     * @When I execute the explore tool :toolName and answer :answer and multiselect :keys
+     */
+    public function iExecuteTheExploreToolAndAnswerAndMultiselect(string $toolName, string $answer, string $keys): void
+    {
+        $io = new BufferingToolIO();
+        $io->queueAnswer($answer);
+        $io->queueMultipleChoice($keys);
+        $this->runTool($toolName, $io);
+    }
+
+    /**
      * @Then the tool output should contain :text
      */
     public function theToolOutputShouldContain(string $text): void

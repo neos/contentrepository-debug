@@ -13,7 +13,9 @@ use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryI
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
+use Neos\ContentRepository\Debug\InternalServices\EventStoreDebuggingInternalsFactory;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
+use Neos\EventStore\EventStoreInterface;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\ObjectManagement\ObjectManagerInterface;
 use Neos\Flow\Reflection\ReflectionService;
@@ -123,6 +125,13 @@ final class ExploreSessionFactory
                     return null;
                 }
                 return $crRegistry->get($crId)->getContentGraph($ws);
+            },
+            EventStoreInterface::class => static function (ToolContext $ctx) use ($crRegistry): ?EventStoreInterface {
+                $crId = $ctx->getByType(ContentRepositoryId::class);
+                if (!$crId instanceof ContentRepositoryId) {
+                    return null;
+                }
+                return $crRegistry->buildService($crId, new EventStoreDebuggingInternalsFactory())->eventStore;
             },
             // Bypass AuthProvider::getVisibilityConstraints() which requires an initialized
             // SecurityContext — unavailable in CLI. Use empty constraints to see all nodes.

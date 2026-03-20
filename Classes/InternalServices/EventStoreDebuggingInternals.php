@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Neos\ContentRepository\Debug\InternalServices;
 
 use Neos\ContentRepository\Core\Factory\ContentRepositoryServiceInterface;
@@ -8,13 +10,15 @@ use Neos\EventStore\EventStoreInterface;
 use Neos\EventStore\Model\Event\SequenceNumber;
 use Neos\EventStore\Model\EventStream\VirtualStreamName;
 
+/**
+ * @internal Exposes event store and subscription engine internals needed for debug and replay tooling.
+ */
 final readonly class EventStoreDebuggingInternals implements ContentRepositoryServiceInterface
 {
     public function __construct(
-        private EventStoreInterface $eventStore,
+        public EventStoreInterface $eventStore,
         private SubscriptionEngine $subscriptionEngine,
-    )
-    {
+    ) {
     }
 
     public function getMaxSequenceNumber(): SequenceNumber

@@ -35,4 +35,13 @@ interface ToolIOInterface
      * @param array<string, string> $choices key => label
      */
     public function choose(string $question, array $choices): string;
+
+    /**
+     * Present a numbered list of choices; returns the selected keys.
+     *
+     * @param array<string, string> $choices  key => label
+     * @param list<string>          $default  keys pre-selected when the prompt opens
+     * @return list<string>
+     */
+    public function chooseMultiple(string $question, array $choices, array $default = []): array;
 }

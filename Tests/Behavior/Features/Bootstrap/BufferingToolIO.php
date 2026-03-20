@@ -27,6 +27,9 @@ final class BufferingToolIO implements ToolIOInterface
     /** @var list<string> */
     private array $choiceQueue = [];
 
+    /** @var list<string> */
+    private array $multiChoiceQueue = [];
+
     public function queueAnswer(string $answer): void
     {
         $this->answerQueue[] = $answer;
@@ -35,6 +38,11 @@ final class BufferingToolIO implements ToolIOInterface
     public function queueChoice(string $choice): void
     {
         $this->choiceQueue[] = $choice;
+    }
+
+    public function queueMultipleChoice(string $commaSeparatedKeys): void
+    {
+        $this->multiChoiceQueue[] = $commaSeparatedKeys;
     }
 
     public function writeTable(array $headers, array $rows): void
@@ -70,6 +78,15 @@ final class BufferingToolIO implements ToolIOInterface
         }
         // Fall back to first choice if queue is empty or key doesn't exist
         return (string)array_key_first($choices);
+    }
+
+    public function chooseMultiple(string $question, array $choices, array $default = []): array
+    {
+        $queued = array_shift($this->multiChoiceQueue) ?? '';
+        return array_values(array_filter(
+            array_map('trim', explode(',', $queued)),
+            fn(string $k) => isset($choices[$k]),
+        ));
     }
 
     /**

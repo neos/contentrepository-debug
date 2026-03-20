@@ -7,6 +7,7 @@ namespace Neos\ContentRepository\Debug\Explore\Tool\Node;
 use Doctrine\DBAL\Connection;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
+use Neos\ContentRepository\Debug\Explore\EventStore\EventPayloadSummarizer;
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
@@ -60,6 +61,7 @@ final class NodeHistoryTool implements ToolInterface
         $io->writeLine(sprintf('<comment>%d events for node %s</comment>', count($events), $node->value));
         $io->writeLine('');
 
+        $summarizer = new EventPayloadSummarizer();
         $rows = [];
         foreach ($events as $event) {
             $type = $event['type'];
@@ -70,62 +72,12 @@ final class NodeHistoryTool implements ToolInterface
                 $event['sequencenumber'],
                 $shortType,
                 $event['recordedat'],
-                $this->summarizePayload($event['payload'], $shortType),
+                $summarizer->summarize($event['payload'], $shortType),
             ];
         }
 
         $io->writeTable(['Seq', 'Event', 'Recorded at', 'Summary'], $rows);
 
         return null;
-    }
-
-    private function summarizePayload(string $payloadJson, string $eventType): string
-    {
-        $payload = json_decode($payloadJson, true);
-        if (!is_array($payload)) {
-            return '';
-        }
-
-        return match (true) {
-            str_contains($eventType, 'PropertiesWereSet') => $this->summarizeProperties($payload),
-            str_contains($eventType, 'WasCreated'),
-            str_contains($eventType, 'WasMoved'),
-            str_contains($eventType, 'WasRemoved'),
-            str_contains($eventType, 'WasTagged'),
-            str_contains($eventType, 'WasUntagged') => $this->summarizeGeneric($payload),
-            str_contains($eventType, 'ReferenceWasSet'),
-            str_contains($eventType, 'ReferencesWereSet') => $this->summarizeReferences($payload),
-            default => $this->summarizeGeneric($payload),
-        };
-    }
-
-    private function summarizeProperties(array $payload): string
-    {
-        $props = $payload['propertyValues'] ?? [];
-        $names = array_keys($props);
-        if ($names === []) {
-            return '';
-        }
-        $list = implode(', ', array_slice($names, 0, 5));
-        return count($names) > 5 ? $list . ' (+' . (count($names) - 5) . ')' : $list;
-    }
-
-    private function summarizeReferences(array $payload): string
-    {
-        $name = $payload['referenceName'] ?? '?';
-        $refs = $payload['references'] ?? [];
-        return sprintf('%s (%d refs)', $name, count($refs));
-    }
-
-    private function summarizeGeneric(array $payload): string
-    {
-        $parts = [];
-        if (isset($payload['nodeTypeName'])) {
-            $parts[] = $payload['nodeTypeName'];
-        }
-        if (isset($payload['tag'])) {
-            $parts[] = 'tag:' . $payload['tag'];
-        }
-        return implode(' ', $parts);
     }
 }

@@ -149,6 +149,14 @@ Feature: Interactive explore tools
     Then the tool output should contain "Outgoing references (0)"
     And the tool output should contain "Incoming references (0)"
 
+  Scenario: EventContextTool dumps the selected event payload
+    Given the explore context is:
+      | cr | default |
+    # seq 1 = RootWorkspaceWasCreated (workspaceName: live)
+    When I execute the explore tool "EventContextTool" and answer "1" and multiselect "1"
+    Then the tool output should contain "RootWorkspaceWasCreated"
+    And the tool output should contain "workspaceName: live"
+
   Scenario: NodeHistoryTool shows the event that created the node
     Given the explore context is:
       | cr   | default |
