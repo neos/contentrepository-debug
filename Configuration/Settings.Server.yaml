@@ -4,4 +4,51 @@ SJS:
       server:
         mcp:
           featureSets:
-            crDebugExplore: Neos\ContentRepository\Debug\Explore\MCP\DebugFeatureSet
+            crDebugExplore:
+              implementation: SJS\Flow\MCP\FeatureSet\OptionDefinedFeatureSet
+              options:
+                tools:
+                  "explore":
+                    callback: Neos\ContentRepository\Debug\Explore\MCP\ExploreToolDispatcherTool::run
+                    description: >
+                      Explore the Neos Content Repository interactively. Call without a tool name to
+                      discover available tools, then call with a tool name to execute it. Every response
+                      includes the updated context and list of next available tools. If a tool needs
+                      input you didn't supply, the response tells you what's needed — re-invoke with
+                      the answer in the answers array.
+                    inputSchema:
+                      type: object
+                      properties:
+                        tool:
+                          type: string
+                          description: >
+                            Tool to execute (short class name from availableTools).
+                            Omit to just list available tools.
+                        context:
+                          type: object
+                          description: >
+                            Current explore context. Pass the context object from the previous
+                            response, or start with just {"cr": "<id>"}.
+                          properties:
+                            cr:
+                              type: string
+                              description: 'Content repository identifier (e.g. "default")'
+                            workspace:
+                              type: string
+                              description: Workspace name
+                            node:
+                              type: string
+                              description: Node aggregate ID
+                            dsp:
+                              type: string
+                              description: Dimension space point as JSON
+                        answers:
+                          type: array
+                          description: >
+                            Answers for interactive prompts, consumed in order.
+                            Supply these when re-invoking after an interaction-required response.
+                          items:
+                            type: string
+                    annotations:
+                      title: Explore Content Repository
+                      readOnlyHint: true

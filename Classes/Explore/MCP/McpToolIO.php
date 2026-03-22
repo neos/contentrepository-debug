@@ -80,6 +80,19 @@ final class McpToolIO implements ToolIOInterface
         return $this->resolveChoiceAnswer($answer, $choices);
     }
 
+    public function chooseMultiple(string $question, array $choices, array $default = []): array
+    {
+        $ordinal = $this->nextOrdinal++;
+        $answer = array_shift($this->answerQueue);
+        if ($answer === null) {
+            throw new McpInteractionRequiredException('chooseMultiple', $question, $choices, $ordinal);
+        }
+        return array_map(
+            fn(string $part) => $this->resolveChoiceAnswer(trim($part), $choices),
+            explode(',', $answer),
+        );
+    }
+
     /**
      * Match a potentially sloppy MCP answer against the choice keys.
      * Tries exact key match first, then falls back to substring matching if exactly one key contains the answer.

@@ -14,23 +14,20 @@ use Neos\ContentRepository\Debug\Explore\ToolContext;
 use Neos\ContentRepository\Debug\Explore\ToolDispatcher;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Mvc\ActionRequest;
-use SJS\Flow\MCP\Domain\MCP\Tool;
-use SJS\Flow\MCP\Domain\MCP\Tool\Annotations;
-use SJS\Flow\MCP\Domain\MCP\Tool\Content;
-use SJS\Flow\MCP\JsonSchema\ArraySchema;
-use SJS\Flow\MCP\JsonSchema\ObjectSchema;
-use SJS\Flow\MCP\JsonSchema\StringSchema;
 
 /**
- * @internal Single MCP tool for exploring the Content Repository. Each response includes
+ * @internal Single MCP callback for exploring the Content Repository. Each response includes
  *           updated context and available next tools so the client always knows what to do next.
+ *           Registered via SJS.Flow.MCP OptionDefinedFeatureSet in Settings.Server.yaml —
+ *           no SJS.Flow.MCP imports here so Flow's reflection works without MCP installed.
  *
  * Flow:
  *   1. Call with just context (no tool) → discover available tools
  *   2. Call with tool + context + answers → execute, get output + next tools
  *   3. If answers are insufficient → interaction-required response with question/choices
  */
-final class ExploreToolDispatcherTool extends Tool
+#[Flow\Scope("singleton")]
+final class ExploreToolDispatcherTool
 {
     #[Flow\Inject]
     protected ExploreSessionFactory $sessionFactory;
@@ -41,42 +38,11 @@ final class ExploreToolDispatcherTool extends Tool
         ShowResumeCommandTool::class,
     ];
 
-    public function __construct()
-    {
-        parent::__construct(
-            name: 'explore',
-            description: <<<'DESC'
-                Explore the Neos Content Repository interactively. Call without a tool name to discover available tools,
-                then call with a tool name to execute it. Every response includes the updated context (pass it back on
-                the next call) and the list of available next tools. If a tool needs input you didn't supply, the
-                response tells you what's needed (question + choices) — re-invoke with the answer in the answers array.
-                DESC,
-            inputSchema: new ObjectSchema(
-                properties: [
-                    'tool' => new StringSchema('Tool to execute (short class name from availableTools). Omit to just list available tools.'),
-                    'context' => new ObjectSchema(
-                        description: 'Current explore context. Pass the context object from the previous response, or start with just {"cr": "<id>"}.',
-                        properties: [
-                            'cr' => new StringSchema('Content repository identifier (e.g. "default")'),
-                            'workspace' => new StringSchema('Workspace name'),
-                            'node' => new StringSchema('Node aggregate ID'),
-                            'dsp' => new StringSchema('Dimension space point as JSON'),
-                        ],
-                    ),
-                    'answers' => new ArraySchema(
-                        description: 'Answers for interactive prompts, consumed in order. Supply these when re-invoking after an interaction-required response.',
-                        items: new StringSchema(),
-                    ),
-                ],
-            ),
-            annotations: new Annotations(
-                title: 'Explore Content Repository',
-                readOnlyHint: true,
-            ),
-        );
-    }
-
-    public function run(ActionRequest $actionRequest, array $input): Content
+    /**
+     * @param array<string, mixed> $input
+     * @return array<string, mixed>|string
+     */
+    public function run(ActionRequest $actionRequest, array $input): array|string
     {
         $contextParams = array_filter($input['context'] ?? []);
         $toolName = $input['tool'] ?? null;
@@ -89,19 +55,19 @@ final class ExploreToolDispatcherTool extends Tool
 
             // No tool specified → just return available tools
             if (!is_string($toolName) || $toolName === '') {
-                return Content::structuredWithFallback([
+                return [
                     'context' => $serializer->serialize($context),
                     'availableTools' => $this->buildAvailableToolsList($dispatcher, $context),
-                ]);
+                ];
             }
 
             $tool = $this->findToolByShortName($toolName, $dispatcher->availableTools($context));
             if ($tool === null) {
-                return Content::text(sprintf(
+                return sprintf(
                     'Tool "%s" is not available in the current context. Available: %s',
                     $toolName,
                     implode(', ', array_keys($this->buildAvailableToolsList($dispatcher, $context))),
-                ));
+                );
             }
 
             $io = new McpToolIO($answers);
@@ -109,10 +75,10 @@ final class ExploreToolDispatcherTool extends Tool
 
             // Handle exit sentinel
             if ($result === ExploreSession::exit()) {
-                return Content::structuredWithFallback([
+                return [
                     'output' => $io->toTextOutput(),
                     'sessionExited' => true,
-                ]);
+                ];
             }
 
             $contextChanged = $result !== null;
@@ -127,23 +93,23 @@ final class ExploreToolDispatcherTool extends Tool
                 }
             }
 
-            return Content::structuredWithFallback([
+            return [
                 'output' => $io->toTextOutput(),
                 'structured' => $io->toStructuredOutput(),
                 'context' => $serializer->serialize($context),
                 'contextChanged' => $contextChanged,
                 'availableTools' => $this->buildAvailableToolsList($dispatcher, $context),
-            ]);
+            ];
         } catch (McpInteractionRequiredException $e) {
-            return Content::structuredWithFallback([
+            return [
                 'interactionRequired' => true,
                 'interactionType' => $e->interactionType,
                 'question' => $e->question,
                 'choices' => $e->choices !== [] ? $e->choices : null,
                 'ordinal' => $e->ordinal,
-            ]);
+            ];
         } catch (\Throwable $e) {
-            return Content::text(sprintf('Error executing tool "%s": %s', $toolName ?? '(none)', $e->getMessage()));
+            return sprintf('Error executing tool "%s": %s', $toolName ?? '(none)', $e->getMessage());
         }
     }
 
