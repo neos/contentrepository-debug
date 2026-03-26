@@ -10,6 +10,7 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphInterface;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
+use Neos\ContentRepository\Debug\Explore\Tool\ToolMeta;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
 
 /**
@@ -19,6 +20,7 @@ use Neos\ContentRepository\Debug\Explore\ToolContext;
  * @see ContentRepository::getVariationGraph() for discovering all allowed DSPs.
  * @see ContentGraphInterface::findNodeAggregateById() for node-specific dimension coverage.
  */
+#[ToolMeta(shortName: 'dsp', group: 'Dimensions')]
 final class ChooseDimensionTool implements ToolInterface
 {
     public function getMenuLabel(ToolContext $context): string

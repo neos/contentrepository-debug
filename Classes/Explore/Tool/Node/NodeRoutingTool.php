@@ -9,6 +9,7 @@ use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
+use Neos\ContentRepository\Debug\Explore\Tool\ToolMeta;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
 use Neos\Neos\FrontendRouting\Projection\DocumentUriPathFinder;
 
@@ -17,6 +18,7 @@ use Neos\Neos\FrontendRouting\Projection\DocumentUriPathFinder;
  *
  * @see DocumentUriPathFinder::getByIdAndDimensionSpacePointHash() for the underlying lookup.
  */
+#[ToolMeta(shortName: 'uriPath', group: 'Other')]
 final class NodeRoutingTool implements ToolInterface
 {
     public function getMenuLabel(ToolContext $context): string

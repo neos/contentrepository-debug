@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Neos\ContentRepository\Debug\Explore;
 
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
-use Neos\ContentRepository\Debug\Explore\Tool\AutoRunToolInterface;
 
 /**
  * @internal Transport-agnostic session loop — construct with a {@see ToolDispatcher}, then call run()
@@ -51,30 +50,45 @@ final class ExploreSession
                 ($this->contextRenderer)($context, $io);
             }
 
-            $available = $this->dispatcher->availableTools($context);
+            $menu = $this->dispatcher->buildMenu($context);
+            $available = $menu->available();
 
             // Auto-run tools on every context change (e.g. NodeIdentityTool re-runs when navigating nodes)
             if ($contextJustChanged) {
-                foreach ($available as $tool) {
-                    if ($tool instanceof AutoRunToolInterface) {
-                        $io->writeLine('');
-                        $io->writeLine('<info>--- ' . $tool->getMenuLabel($context) . ' ---</info>');
-                        $this->dispatcher->execute($tool, $context, $io);
-                    }
+                foreach ($menu->availableAutoRun() as $autoTool) {
+                    $io->writeLine('');
+                    $io->writeLine('<info>--- ' . $autoTool->tool->getMenuLabel($context) . ' ---</info>');
+                    $this->dispatcher->execute($autoTool->tool, $context, $io);
                 }
             }
 
-            $choices = [];
-            foreach ($available as $i => $tool) {
-                $label = $tool->getMenuLabel($context);
-                if ($baselineToolSet !== null && !isset($baselineToolSet[$tool::class])) {
-                    $label = '★ ' . $label;
-                }
-                $choices[(string)$i] = $label;
+            // Mark newly-available tools with ★ in their labels by rebuilding the menu with starred labels.
+            // We rebuild via a fresh menu with modified labels so CliToolIO sees them at render time.
+            if ($baselineToolSet !== null) {
+                $starredItems = array_map(
+                    function (ToolMenuItem $item) use ($baselineToolSet): ToolMenuItem {
+                        if ($item->available && !isset($baselineToolSet[$item->tool::class])) {
+                            return new ToolMenuItem(
+                                shortName: $item->shortName,
+                                label: '★ ' . $item->label,
+                                group: $item->group,
+                                available: $item->available,
+                                tool: $item->tool,
+                                missingContextTypes: $item->missingContextTypes,
+                            );
+                        }
+                        return $item;
+                    },
+                    $menu->items,
+                );
+                $menu = new ToolMenu($starredItems);
             }
 
-            $selected = $io->choose('Choose a tool', $choices);
-            $tool = $available[(int)$selected];
+            $shortName = $io->chooseFromMenu($menu);
+            $item = $menu->findByShortName($shortName);
+            // findByShortName is guaranteed non-null here: chooseFromMenu only returns valid, available short names
+            assert($item !== null);
+            $tool = $item->tool;
 
             $io->writeLine('');
             $io->writeLine('<info>--- ' . $tool->getMenuLabel($context) . ' ---</info>');

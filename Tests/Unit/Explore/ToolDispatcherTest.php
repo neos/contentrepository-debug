@@ -8,6 +8,7 @@ use Neos\ContentRepository\Debug\Explore\ToolContext;
 use Neos\ContentRepository\Debug\Explore\ToolContextRegistry;
 use Neos\ContentRepository\Debug\Explore\ToolDispatcher;
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
+use Neos\ContentRepository\Debug\Explore\ToolMenu;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
 use PHPUnit\Framework\TestCase;
 
@@ -239,4 +240,6 @@ final class FakeToolIO implements ToolIOInterface
     public function writeError(string $message): void {}
     public function ask(string $question, ?callable $autocomplete = null): string { return ''; }
     public function choose(string $question, array $choices): string { return array_key_first($choices); }
+    public function chooseMultiple(string $question, array $choices, array $default = []): array { return $default; }
+    public function chooseFromMenu(ToolMenu $menu): string { return $menu->available()[0]->shortName ?? ''; }
 }

@@ -4,17 +4,23 @@ declare(strict_types=1);
 
 namespace Neos\ContentRepository\Debug\Explore\IO;
 
-use Neos\Flow\Cli\ConsoleOutput;
-
 use Laravel\Prompts\MultiSelectPrompt;
+use Neos\ContentRepository\Debug\Explore\ToolMenu;
+use Neos\Flow\Cli\ConsoleOutput;
 
 /**
  * @internal Adapts Flow's {@see ConsoleOutput} to the {@see ToolIOInterface} contract for interactive CLI sessions.
  */
-
 final class CliToolIO implements ToolIOInterface
 {
-    public function __construct(private readonly ConsoleOutput $console) {}
+    /**
+     * @param array<string, array{position: string, groups: list<string>}> $menuColumns
+     *   Column layout config from Settings.yaml (sorted by {@see ToolSelectionPrompt}).
+     */
+    public function __construct(
+        private readonly ConsoleOutput $console,
+        private readonly array $menuColumns = [],
+    ) {}
 
     public function writeTable(array $headers, array $rows): void
     {
@@ -62,5 +68,22 @@ final class CliToolIO implements ToolIOInterface
         $selected = (new MultiSelectPrompt(label: $question, options: $choices, default: $default, scroll: 100))->prompt();
         // Re-sort by position in $choices — laravel/prompts returns keys in toggle order, not options order.
         return array_values(array_intersect(array_keys($choices), $selected));
+    }
+
+    public function chooseFromMenu(ToolMenu $menu): string
+    {
+        while (true) {
+            $answer = (new ToolSelectionPrompt($menu, $this->menuColumns))->prompt();
+
+            $selected = $menu->findByShortName((string)$answer);
+            if ($selected === null || !$selected->available) {
+                $missing = ($selected?->missingContextTypes ?? []) !== []
+                    ? implode(', ', $selected->missingContextTypes)
+                    : 'required context';
+                $this->writeError(sprintf('"%s" is not available yet — needs: %s', $answer, $missing));
+                continue;
+            }
+            return (string)$answer;
+        }
     }
 }

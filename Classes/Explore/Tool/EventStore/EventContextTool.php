@@ -7,6 +7,7 @@ namespace Neos\ContentRepository\Debug\Explore\Tool\EventStore;
 use Neos\ContentRepository\Debug\Explore\EventStore\EventPayloadSummarizer;
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
+use Neos\ContentRepository\Debug\Explore\Tool\ToolMeta;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
 use Neos\EventStore\EventStoreInterface;
 use Neos\EventStore\Model\Event\SequenceNumber;
@@ -19,6 +20,7 @@ use Neos\EventStore\Model\EventStream\VirtualStreamName;
  *
  * @see NodeHistoryTool for node-specific event history
  */
+#[ToolMeta(shortName: 'seq', group: 'Events')]
 final class EventContextTool implements ToolInterface
 {
     private const int WINDOW = 10;

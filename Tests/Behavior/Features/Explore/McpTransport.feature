@@ -54,7 +54,7 @@ Feature: MCP transport for explore tools
       | dsp       | {"language":"mul"} |
     When I call MCP explore without a tool
     Then the MCP response should list available tool "ChildNodesTool"
-    And the MCP response should list available tool "NodeIdentityTool"
+    And the MCP response should list available tool "NodeInfoTool"
 
   # ---------------------------------------------------------------------------
   # Tool execution with output
@@ -66,7 +66,7 @@ Feature: MCP transport for explore tools
       | workspace | live               |
       | node      | page-1             |
       | dsp       | {"language":"mul"} |
-    When I execute the explore tool "NodeIdentityTool" via MCP
+    When I execute the explore tool "NodeInfoTool" via MCP
     Then the MCP structured output should contain key-value "ID" "page-1"
     And the MCP text output should contain "page-1"
     And the MCP response should list available tool "ChildNodesTool"
@@ -77,7 +77,7 @@ Feature: MCP transport for explore tools
       | workspace | live               |
       | node      | does-not-exist     |
       | dsp       | {"language":"mul"} |
-    When I execute the explore tool "NodeIdentityTool" via MCP
+    When I execute the explore tool "NodeInfoTool" via MCP
     Then the MCP structured output should contain an error matching "not found"
 
   # ---------------------------------------------------------------------------

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Neos\ContentRepository\Debug\Explore\MCP;
 
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
+use Neos\ContentRepository\Debug\Explore\ToolMenu;
+use Neos\ContentRepository\Debug\Explore\ToolMenuItem;
 
 /**
  * @internal MCP transport for {@see ToolIOInterface} — buffers all output and consumes pre-supplied answers
@@ -91,6 +93,39 @@ final class McpToolIO implements ToolIOInterface
             fn(string $part) => $this->resolveChoiceAnswer(trim($part), $choices),
             explode(',', $answer),
         );
+    }
+
+    public function chooseFromMenu(ToolMenu $menu): string
+    {
+        $ordinal = $this->nextOrdinal++;
+        $answer = array_shift($this->answerQueue);
+
+        // Build choices map: shortName => label (available tools first, for readable MCP interaction)
+        $choices = [];
+        foreach ($menu->available() as $item) {
+            $choices[$item->shortName] = $item->label;
+        }
+
+        if ($answer === null) {
+            throw new McpInteractionRequiredException('chooseFromMenu', 'Choose a tool', $choices, $ordinal);
+        }
+
+        // Accept exact short name; fall back to substring match among available tools
+        if (isset($choices[$answer])) {
+            return $answer;
+        }
+        $matches = array_filter(
+            array_keys($choices),
+            fn(string $key) => str_contains($key, $answer),
+        );
+        if (count($matches) === 1) {
+            return array_values($matches)[0];
+        }
+        throw new \InvalidArgumentException(sprintf(
+            'Answer "%s" does not uniquely match any available tool. Available: %s',
+            $answer,
+            implode(', ', array_keys($choices)),
+        ));
     }
 
     /**

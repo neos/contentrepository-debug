@@ -6,6 +6,7 @@ namespace Neos\ContentRepository\Debug\Explore;
 
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
+use Neos\ContentRepository\Debug\Explore\Tool\ToolMeta;
 /**
  * @internal Matches tools against the current {@see ToolContext} by reflecting on execute() parameter types,
  *           then invokes the selected tool with resolved arguments — tool authors never reference this directly.
@@ -48,6 +49,116 @@ final class ToolDispatcher
             }
         }
         return $available;
+    }
+
+    /**
+     * Build a {@see ToolMenu} containing ALL tools (available + unavailable) for the current context,
+     * grouped and sorted for display. Session-group tools appear last; within each group available
+     * tools come before unavailable ones.
+     */
+    public function buildMenu(ToolContext $context): ToolMenu
+    {
+        // Collect items per group, Session group deferred to end
+        /** @var array<string, list<ToolMenuItem>> $byGroup */
+        $byGroup = [];
+        /** @var list<ToolMenuItem> $sessionItems */
+        $sessionItems = [];
+
+        foreach ($this->tools as $tool) {
+            $meta = $this->resolveToolMeta($tool);
+            $available = $this->isAvailable($tool, $context);
+            $missing = $available ? [] : $this->missingContextTypes($tool, $context);
+
+            $item = new ToolMenuItem(
+                shortName: $meta->shortName,
+                label: $tool->getMenuLabel($context),
+                group: $meta->group,
+                available: $available,
+                tool: $tool,
+                missingContextTypes: $missing,
+            );
+
+            if ($meta->group === 'Session') {
+                $sessionItems[] = $item;
+            } else {
+                $byGroup[$meta->group][] = $item;
+            }
+        }
+
+        // Within each group: available first, then unavailable
+        $sortGroup = static function (array $items): array {
+            usort($items, fn(ToolMenuItem $a, ToolMenuItem $b) => $b->available <=> $a->available);
+            return $items;
+        };
+
+        $items = [];
+        foreach ($byGroup as $groupItems) {
+            foreach ($sortGroup($groupItems) as $item) {
+                $items[] = $item;
+            }
+        }
+        foreach ($sortGroup($sessionItems) as $item) {
+            $items[] = $item;
+        }
+
+        return new ToolMenu($items);
+    }
+
+    /**
+     * Read the {@see ToolMeta} attribute from the tool class, falling back to derived values:
+     * - shortName: class basename without "Tool" suffix, CamelCase → kebab-case
+     * - group: last namespace segment before "Tool\" sub-namespace (e.g. Tool\Node → "Node")
+     */
+    private function resolveToolMeta(ToolInterface $tool): ToolMeta
+    {
+        $ref = new \ReflectionClass($tool);
+        $attrs = $ref->getAttributes(ToolMeta::class);
+        if ($attrs !== []) {
+            return $attrs[0]->newInstance();
+        }
+
+        // Derive shortName from class basename
+        $baseName = $ref->getShortName();
+        $withoutSuffix = preg_replace('/Tool$/', '', $baseName) ?? $baseName;
+        // CamelCase → kebab-case
+        $shortName = strtolower((string)preg_replace('/(?<!^)[A-Z]/', '-$0', $withoutSuffix));
+
+        // Derive group from namespace segment after "Tool\"
+        $ns = $ref->getNamespaceName();
+        if (preg_match('/\\\\Tool\\\\([^\\\\]+)/', $ns, $m)) {
+            $group = $m[1];
+        } else {
+            $group = 'Other';
+        }
+
+        return new ToolMeta(shortName: $shortName, group: $group);
+    }
+
+    /**
+     * Collect registered context-type names that are required by the tool's execute() but absent
+     * from $context. Only covers direct context types (not derived resolvers).
+     *
+     * @return list<string>
+     */
+    private function missingContextTypes(ToolInterface $tool, ToolContext $context): array
+    {
+        $missing = [];
+        $method = new \ReflectionMethod($tool, 'execute');
+        foreach ($method->getParameters() as $param) {
+            $type = $param->getType();
+            if (!$type instanceof \ReflectionNamedType) {
+                continue;
+            }
+            $typeName = $type->getName();
+            if ($this->isFrameworkInjected($typeName) || $this->isDerived($typeName)) {
+                continue;
+            }
+            if (!$param->isOptional() && !$type->allowsNull() && !$context->hasByType($typeName)) {
+                $descriptor = $this->registry->getByType($typeName);
+                $missing[] = $descriptor?->name ?? $typeName;
+            }
+        }
+        return $missing;
     }
 
     public function execute(ToolInterface $tool, ToolContext $context, ToolIOInterface $io): ?ToolContext

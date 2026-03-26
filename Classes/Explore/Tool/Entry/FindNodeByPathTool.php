@@ -9,6 +9,7 @@ use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
+use Neos\ContentRepository\Debug\Explore\Tool\ToolMeta;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
 use Neos\Flow\Annotations as Flow;
 use Neos\Neos\Domain\Model\SiteNodeName;
@@ -21,6 +22,7 @@ use Neos\Neos\FrontendRouting\Projection\DocumentUriPathFinder;
  * Uses {@see SiteRepository} to auto-detect the site (asks user if ambiguous).
  * @see DocumentUriPathFinder::getEnabledBySiteNodeNameUriPathAndDimensionSpacePointHash() for the lookup.
  */
+#[ToolMeta(shortName: 'path', group: 'Other')]
 final class FindNodeByPathTool implements ToolInterface
 {
     #[Flow\Inject]

@@ -7,6 +7,7 @@ namespace Neos\ContentRepository\Debug\Explore\Tool\Entry;
 use Neos\ContentRepository\Core\ContentRepository;
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
+use Neos\ContentRepository\Debug\Explore\Tool\ToolMeta;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
 
 /**
@@ -14,6 +15,7 @@ use Neos\ContentRepository\Debug\Explore\ToolContext;
  *
  * @see ContentRepository::findWorkspaces() for the underlying lookup.
  */
+#[ToolMeta(shortName: 'wsId', group: 'Workspace')]
 final class ChooseWorkspaceTool implements ToolInterface
 {
     public function getMenuLabel(ToolContext $context): string

@@ -8,6 +8,7 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\ContentSubgraphInterface
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
+use Neos\ContentRepository\Debug\Explore\Tool\ToolMeta;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
 
 /**
@@ -15,6 +16,7 @@ use Neos\ContentRepository\Debug\Explore\ToolContext;
  *
  * @see ContentSubgraphInterface::findNodeById() for the underlying lookup.
  */
+#[ToolMeta(shortName: 'nProps', group: 'Nodes')]
 final class NodePropertiesTool implements ToolInterface
 {
     public function getMenuLabel(ToolContext $context): string

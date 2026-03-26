@@ -10,6 +10,7 @@ use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Debug\Explore\EventStore\EventPayloadSummarizer;
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
+use Neos\ContentRepository\Debug\Explore\Tool\ToolMeta;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
 use Neos\ContentRepositoryRegistry\Factory\EventStore\DoctrineEventStoreFactory;
 use Neos\Flow\Annotations as Flow;
@@ -19,6 +20,7 @@ use Neos\Flow\Annotations as Flow;
  *
  * Searches the event payload JSON for the nodeAggregateId to find all events that affected this node.
  */
+#[ToolMeta(shortName: 'nHist', group: 'Events')]
 final class NodeHistoryTool implements ToolInterface
 {
     #[Flow\Inject]

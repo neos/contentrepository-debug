@@ -9,6 +9,7 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindAncestorNodes
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
+use Neos\ContentRepository\Debug\Explore\Tool\ToolMeta;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
 
 /**
@@ -16,6 +17,7 @@ use Neos\ContentRepository\Debug\Explore\ToolContext;
  *
  * @see ContentSubgraphInterface::findAncestorNodes() for the underlying lookup.
  */
+#[ToolMeta(shortName: 'pn', group: 'Nodes')]
 final class GoToParentNodeTool implements ToolInterface
 {
     public function getMenuLabel(ToolContext $context): string

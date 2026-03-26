@@ -94,40 +94,40 @@ Feature: Interactive explore tools
   # Inspection tools — node identity and structure
   # ---------------------------------------------------------------------------
 
-  Scenario: NodeIdentityTool shows the node's aggregate ID, type, and classification
+  Scenario: NodeInfoTool shows the node's aggregate ID, type, and classification
     Given the explore context is:
       | cr        | default            |
       | workspace | live               |
       | node      | page-1             |
       | dsp       | {"language":"mul"} |
-    When I execute the explore tool "NodeIdentityTool"
+    When I execute the explore tool "NodeInfoTool"
     Then the tool output should contain "page-1"
     And the tool output should contain "Neos.ContentRepository.Testing:Document"
     And the tool output should contain "regular"
 
-  Scenario: NodeIdentityTool reports an error when the node does not exist
+  Scenario: NodeInfoTool reports an error when the node does not exist
     Given the explore context is:
       | cr        | default            |
       | workspace | live               |
       | node      | does-not-exist     |
       | dsp       | {"language":"mul"} |
-    When I execute the explore tool "NodeIdentityTool"
+    When I execute the explore tool "NodeInfoTool"
     Then the tool should have written an error containing "not found"
 
-  Scenario: DiscoverNodeTool lists which workspaces contain the node and what type it has
+  Scenario: NodeInfoTool lists which workspaces contain the node
     Given the explore context is:
       | cr   | default |
       | node | page-1  |
-    When I execute the explore tool "DiscoverNodeTool"
+    When I execute the explore tool "NodeInfoTool"
     Then the tool output should contain "live"
     And the tool output should contain "Neos.ContentRepository.Testing:Document"
 
-  Scenario: NodeDimensionsTool shows the dimension space points the node is available in
+  Scenario: NodeInfoTool shows the dimension space points the node is available in
     Given the explore context is:
       | cr        | default |
       | workspace | live    |
       | node      | page-1  |
-    When I execute the explore tool "NodeDimensionsTool"
+    When I execute the explore tool "NodeInfoTool"
     Then the tool output should contain '{"language":"mul"}'
 
   Scenario: NodePropertiesTool reports that a node with no properties has none
@@ -152,10 +152,10 @@ Feature: Interactive explore tools
   Scenario: EventContextTool dumps the selected event payload
     Given the explore context is:
       | cr | default |
-    # seq 1 = RootWorkspaceWasCreated (workspaceName: live)
+    # seq 1 = ContentStreamWasCreated (contentStreamId: cs-identifier)
     When I execute the explore tool "EventContextTool" and answer "1" and multiselect "1"
-    Then the tool output should contain "RootWorkspaceWasCreated"
-    And the tool output should contain "workspaceName: live"
+    Then the tool output should contain "ContentStreamWasCreated"
+    And the tool output should contain "contentStreamId: cs-identifier"
 
   Scenario: NodeHistoryTool shows the event that created the node
     Given the explore context is:

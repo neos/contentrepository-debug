@@ -9,12 +9,25 @@ use Neos\ContentRepository\Debug\Explore\ExploreSession;
 use Neos\ContentRepository\Debug\Explore\ExploreSessionFactory;
 use Neos\ContentRepository\Debug\Explore\IO\CliToolIO;
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
+use Neos\ContentRepository\Debug\Explore\IO\ToolSelectionPrompt;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
+use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cli\CommandController;
 
 class CrCommandController extends CommandController
 {
+    /**
+     * Column layout for the tool-selection widget.
+     *
+     * Keyed by an arbitrary name; each entry has `position` and `groups`.
+     * Sorted at runtime by {@see ToolSelectionPrompt} via PositionalArraySorter.
+     *
+     * @var array<string, array{position: string, groups: list<string>}>
+     */
+    #[Flow\InjectConfiguration(path: 'explore.menuColumns', package: 'Neos.ContentRepository.Debug')]
+    protected array $menuColumns = [];
+
     private ContentRepositoryDebugger $debugger;
 
     public function __construct(
@@ -57,7 +70,7 @@ class CrCommandController extends CommandController
         };
 
         $session = new ExploreSession($dispatcher, $contextRenderer);
-        $session->run($ctx, new CliToolIO($this->output));
+        $session->run($ctx, new CliToolIO($this->output, $this->menuColumns));
     }
 
     public function debugCommand(string $debugScript, string $contentRepository = 'default'): void

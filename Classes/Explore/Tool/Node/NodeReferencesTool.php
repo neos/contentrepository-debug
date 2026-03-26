@@ -10,6 +10,7 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindReferencesFil
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
+use Neos\ContentRepository\Debug\Explore\Tool\ToolMeta;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
 
 /**
@@ -18,6 +19,7 @@ use Neos\ContentRepository\Debug\Explore\ToolContext;
  * @see ContentSubgraphInterface::findReferences() for outgoing references.
  * @see ContentSubgraphInterface::findBackReferences() for incoming references.
  */
+#[ToolMeta(shortName: 'nRefs', group: 'Nodes')]
 final class NodeReferencesTool implements ToolInterface
 {
     public function getMenuLabel(ToolContext $context): string

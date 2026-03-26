@@ -11,6 +11,7 @@ use Neos\ContentRepository\Debug\Explore\ToolContextSerializer;
 use Neos\ContentRepository\Debug\Explore\Tool\Session\ExitTool;
 use Neos\ContentRepository\Debug\Explore\Tool\Session\ShowResumeCommandTool;
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
+use Neos\ContentRepository\Debug\Explore\ToolMenu;
 use PHPUnit\Framework\TestCase;
 
 class SessionToolsTest extends TestCase
@@ -93,4 +94,6 @@ final class SpyToolIO implements ToolIOInterface
     public function writeError(string $message): void {}
     public function ask(string $question, ?callable $autocomplete = null): string { return ''; }
     public function choose(string $question, array $choices): string { return (string)array_key_first($choices); }
+    public function chooseMultiple(string $question, array $choices, array $default = []): array { return $default; }
+    public function chooseFromMenu(ToolMenu $menu): string { return $menu->available()[0]->shortName ?? ''; }
 }

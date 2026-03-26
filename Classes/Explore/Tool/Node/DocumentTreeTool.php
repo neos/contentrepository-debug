@@ -14,6 +14,7 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\Subtree;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
+use Neos\ContentRepository\Debug\Explore\Tool\ToolMeta;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
 use Neos\Neos\FrontendRouting\Projection\DocumentUriPathFinder;
 
@@ -26,6 +27,7 @@ use Neos\Neos\FrontendRouting\Projection\DocumentUriPathFinder;
  * @see ContentSubgraphInterface::findSubtree() for the underlying tree lookup.
  * @see DocumentUriPathFinder for optional URI path enrichment.
  */
+#[ToolMeta(shortName: 'nDocTree', group: 'Nodes')]
 final class DocumentTreeTool implements ToolInterface
 {
     private const MAX_LEVELS = 4;

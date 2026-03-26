@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
+use Neos\ContentRepository\Debug\Explore\ToolMenu;
 
 /**
  * @internal Test double for {@see ToolIOInterface} — captures all output and accepts pre-scripted choices/answers.
@@ -87,6 +88,19 @@ final class BufferingToolIO implements ToolIOInterface
             array_map('trim', explode(',', $queued)),
             fn(string $k) => isset($choices[$k]),
         ));
+    }
+
+    public function chooseFromMenu(ToolMenu $menu): string
+    {
+        $queued = array_shift($this->choiceQueue);
+        if ($queued !== null) {
+            $item = $menu->findByShortName($queued);
+            if ($item !== null && $item->available) {
+                return $queued;
+            }
+        }
+        // Fall back to first available tool
+        return $menu->available()[0]->shortName ?? '';
     }
 
     /**

@@ -10,6 +10,7 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\Subtree;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
+use Neos\ContentRepository\Debug\Explore\Tool\ToolMeta;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
 
 /**
@@ -18,6 +19,7 @@ use Neos\ContentRepository\Debug\Explore\ToolContext;
  *
  * @see ContentSubgraphInterface::findSubtree() for the underlying tree lookup.
  */
+#[ToolMeta(shortName: 'nContentTree', group: 'Nodes')]
 final class ContentTreeTool implements ToolInterface
 {
     private const MAX_LEVELS = 5;

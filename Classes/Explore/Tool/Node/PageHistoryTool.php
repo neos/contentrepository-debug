@@ -12,6 +12,7 @@ use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryI
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
+use Neos\ContentRepository\Debug\Explore\Tool\ToolMeta;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
 use Neos\ContentRepositoryRegistry\Factory\EventStore\DoctrineEventStoreFactory;
 use Neos\Flow\Annotations as Flow;
@@ -22,6 +23,7 @@ use Neos\Flow\Annotations as Flow;
  * Collects all descendant node aggregate IDs via the content subtree, then queries the event store
  * for events affecting any of them — giving a full picture of what changed on a page.
  */
+#[ToolMeta(shortName: 'docHist', group: 'Events')]
 final class PageHistoryTool implements ToolInterface
 {
     #[Flow\Inject]

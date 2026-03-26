@@ -9,6 +9,7 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphInterface;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
+use Neos\ContentRepository\Debug\Explore\Tool\ToolMeta;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
 
 /**
@@ -17,6 +18,7 @@ use Neos\ContentRepository\Debug\Explore\ToolContext;
  * @see ContentGraphInterface::findUsedNodeTypeNames() for discovering types.
  * @see ContentGraphInterface::findNodeAggregatesByType() for listing aggregates.
  */
+#[ToolMeta(shortName: 'types', group: 'Other')]
 final class NodeTypeExplorerTool implements ToolInterface
 {
     public function getMenuLabel(ToolContext $context): string

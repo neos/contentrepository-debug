@@ -19,6 +19,7 @@ use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateIds;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
+use Neos\ContentRepository\Debug\Explore\Tool\ToolMeta;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
 use Neos\EventStore\EventStoreInterface;
 use Neos\EventStore\Model\Event\SequenceNumber;
@@ -32,6 +33,7 @@ use Neos\Utility\ObjectAccess;
  *
  * @see WorkspaceCommandHandler::handlePublishIndividualNodesFromWorkspace for the production logic this mirrors
  */
+#[ToolMeta(shortName: 'simPartialPublish', group: 'Workspace')]
 #[Flow\Scope('singleton')]
 final class WorkspacePartialPublishSimulatorTool implements ToolInterface
 {

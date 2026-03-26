@@ -6,6 +6,7 @@ namespace Neos\ContentRepository\Debug\Explore\Tool\Session;
 
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
+use Neos\ContentRepository\Debug\Explore\Tool\ToolMeta;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
 use Neos\ContentRepository\Debug\Explore\ToolContextSerializer;
 use Neos\Flow\Annotations as Flow;
@@ -14,7 +15,7 @@ use Neos\Flow\Annotations as Flow;
  * @internal Always-available tool that prints the CLI invocation needed to resume the current session.
  *           Uses {@see ToolContextSerializer} to serialise all context slots into --name=value flags.
  */
-
+#[ToolMeta(shortName: 'resume', group: 'Session')]
 final class ShowResumeCommandTool implements ToolInterface
 {
     #[Flow\Inject]

@@ -8,6 +8,7 @@ use Neos\ContentRepository\Debug\Explore\ExploreSession;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
 use Neos\ContentRepository\Debug\Explore\ToolContextRegistry;
 use Neos\ContentRepository\Debug\Explore\ToolDispatcher;
+use Neos\ContentRepository\Debug\Explore\ToolMenu;
 use Neos\ContentRepository\Debug\Explore\IO\ToolIOInterface;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
 use PHPUnit\Framework\TestCase;
@@ -135,5 +136,21 @@ final class ScriptedToolIO implements ToolIOInterface
     {
         $this->renderedChoiceLabels = array_values($choices);
         return (string)array_keys($choices)[(int)array_shift($this->choices)];
+    }
+
+    public function chooseMultiple(string $question, array $choices, array $default = []): array { return $default; }
+
+    public function chooseFromMenu(ToolMenu $menu): string
+    {
+        // Capture all item labels for assertions (mirrors old renderedChoiceLabels behaviour)
+        $this->renderedChoiceLabels = array_map(fn($item) => $item->label, $menu->items);
+
+        $queued = array_shift($this->choices) ?? '0';
+        // Support numeric index (backward-compat) or short-name directly
+        if (is_numeric($queued)) {
+            $available = $menu->available();
+            return $available[(int)$queued]->shortName ?? '';
+        }
+        return $queued;
     }
 }

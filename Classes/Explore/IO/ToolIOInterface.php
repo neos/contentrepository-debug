@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Neos\ContentRepository\Debug\Explore\IO;
 
+use Neos\ContentRepository\Debug\Explore\ToolMenu;
+
 /**
  * @api Implement this to add a new transport (CLI, web, MCP) — all tools communicate exclusively through this interface.
  */
@@ -44,4 +46,13 @@ interface ToolIOInterface
      * @return list<string>
      */
     public function chooseMultiple(string $question, array $choices, array $default = []): array;
+
+    /**
+     * Rich tool-selection prompt: renders a grouped display of all tools (available + unavailable)
+     * and returns the {@see ToolMenuItem::$shortName} of the selected tool.
+     *
+     * The implementation is responsible for re-prompting when the user picks an unavailable tool,
+     * and for showing what context is needed in that case.
+     */
+    public function chooseFromMenu(ToolMenu $menu): string;
 }
