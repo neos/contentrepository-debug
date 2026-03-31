@@ -13,6 +13,8 @@ use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryI
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
+use Neos\ContentRepository\Core\Service\ContentRepositoryMaintainer;
+use Neos\ContentRepository\Core\Service\ContentRepositoryMaintainerFactory;
 use Neos\ContentRepository\Debug\InternalServices\EventStoreDebuggingInternalsFactory;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\EventStore\EventStoreInterface;
@@ -128,6 +130,7 @@ final class ExploreSessionFactory
             ContentGraphInterface::class => [ContentRepositoryId::class, WorkspaceName::class],
             ContentSubgraphInterface::class => [ContentRepositoryId::class, WorkspaceName::class, DimensionSpacePoint::class],
             EventStoreInterface::class => [ContentRepositoryId::class],
+            ContentRepositoryMaintainer::class => [ContentRepositoryId::class],
         ];
     }
 
@@ -154,6 +157,12 @@ final class ExploreSessionFactory
                     return null;
                 }
                 return $crRegistry->buildService($crId, new EventStoreDebuggingInternalsFactory())->eventStore;
+            },
+            ContentRepositoryMaintainer::class => static function (ToolContext $ctx) use ($crRegistry): ?ContentRepositoryMaintainer {
+                $crId = $ctx->getByType(ContentRepositoryId::class);
+                return $crId instanceof ContentRepositoryId
+                    ? $crRegistry->buildService($crId, new ContentRepositoryMaintainerFactory())
+                    : null;
             },
             // Bypass AuthProvider::getVisibilityConstraints() which requires an initialized
             // SecurityContext — unavailable in CLI. Use empty constraints to see all nodes.
