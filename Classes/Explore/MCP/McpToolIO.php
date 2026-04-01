@@ -167,6 +167,14 @@ final class McpToolIO implements ToolIOInterface
         ));
     }
 
+    public function progress(string $label, int $total, \Closure $callback): void
+    {
+        // MCP is stateless — no live progress bar; just run the callback and emit a line when done.
+        $this->lines[] = $label . '…';
+        $callback(static function(): void {});
+        $this->lines[] = $label . ' done.';
+    }
+
     /**
      * @return array{tables: list<array{headers: list<string>, rows: list<list<string>>}>, keyValues: list<array<string, string>>, lines: list<string>, errors: list<string>}
      */

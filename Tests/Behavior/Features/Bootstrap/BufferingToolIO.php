@@ -113,6 +113,11 @@ final class BufferingToolIO implements ToolIOInterface
         return $menu->available()[0]->shortName ?? '';
     }
 
+    public function progress(string $label, int $total, \Closure $callback): void
+    {
+        $callback(static function(): void {});
+    }
+
     /**
      * Returns all output concatenated for easy string assertions.
      * Key-values appear as "Key: value", tables as "col1 | col2" rows.

@@ -63,4 +63,12 @@ interface ToolIOInterface
      * and for showing what context is needed in that case.
      */
     public function chooseFromMenu(ToolMenu $menu): string;
+
+    /**
+     * Run a task with a live progress bar.
+     * Calls $callback with a $advance callable — call $advance() after each completed step.
+     *
+     * @param \Closure(callable $advance): void $callback
+     */
+    public function progress(string $label, int $total, \Closure $callback): void;
 }

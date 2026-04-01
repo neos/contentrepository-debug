@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Neos\ContentRepository\Debug\InternalServices;
 
+use Neos\ContentRepository\Core\EventStore\EventNormalizer;
 use Neos\ContentRepository\Core\Factory\ContentRepositoryServiceInterface;
 use Neos\ContentRepository\Core\Subscription\Engine\SubscriptionEngine;
 use Neos\EventStore\EventStoreInterface;
@@ -17,7 +18,8 @@ final readonly class EventStoreDebuggingInternals implements ContentRepositorySe
 {
     public function __construct(
         public EventStoreInterface $eventStore,
-        private SubscriptionEngine $subscriptionEngine,
+        public SubscriptionEngine $subscriptionEngine,
+        public EventNormalizer $eventNormalizer,
     ) {
     }
 

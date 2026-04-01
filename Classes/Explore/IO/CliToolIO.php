@@ -97,4 +97,12 @@ final class CliToolIO implements ToolIOInterface
             return (string)$answer;
         }
     }
+
+    public function progress(string $label, int $total, \Closure $callback): void
+    {
+        $bar = \Laravel\Prompts\progress(label: $label, steps: $total);
+        $bar->start();
+        $callback(static function() use ($bar): void { $bar->advance(); });
+        $bar->finish();
+    }
 }
