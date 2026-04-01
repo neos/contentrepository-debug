@@ -7,8 +7,6 @@ namespace Neos\ContentRepository\Debug\Explore\MCP;
 use Neos\ContentRepository\Debug\Explore\ExploreSession;
 use Neos\ContentRepository\Debug\Explore\ExploreSessionFactory;
 use Neos\ContentRepository\Debug\Explore\Tool\AutoRunToolInterface;
-use Neos\ContentRepository\Debug\Explore\Tool\Session\ExitTool;
-use Neos\ContentRepository\Debug\Explore\Tool\Session\ShowResumeCommandTool;
 use Neos\ContentRepository\Debug\Explore\Tool\ToolInterface;
 use Neos\ContentRepository\Debug\Explore\ToolContext;
 use Neos\ContentRepository\Debug\Explore\ToolDispatcher;
@@ -31,12 +29,6 @@ final class ExploreToolDispatcherTool
 {
     #[Flow\Inject]
     protected ExploreSessionFactory $sessionFactory;
-
-    /** @var list<class-string> */
-    private const EXCLUDED_TOOLS = [
-        ExitTool::class,
-        ShowResumeCommandTool::class,
-    ];
 
     /**
      * @param array<string, mixed> $input
@@ -133,9 +125,6 @@ final class ExploreToolDispatcherTool
     {
         $tools = [];
         foreach ($dispatcher->availableTools($context) as $tool) {
-            if (in_array($tool::class, self::EXCLUDED_TOOLS, true)) {
-                continue;
-            }
             $tools[(new \ReflectionClass($tool))->getShortName()] = $tool->getMenuLabel($context);
         }
         return $tools;

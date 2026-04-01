@@ -23,9 +23,7 @@ final class ToolSelectionRenderer extends Renderer
     public function __invoke(ToolSelectionPrompt $prompt): string
     {
         if ($prompt->state === 'submit') {
-            $item = $prompt->highlightedItem();
-            $label = $item?->label ?? $prompt->highlighted;
-            return $this->line('  ' . $this->dim('# "' . $prompt->highlighted . ' – ' . $label . '"'));
+            return '';
         }
 
         return $this

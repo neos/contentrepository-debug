@@ -38,7 +38,6 @@ final class ExploreSession
      */
     public function __construct(
         private readonly ToolDispatcher $dispatcher,
-        private readonly ?\Closure $contextRenderer = null,
         private readonly ?\Closure $resumeCommandBuilder = null,
     ) {}
 
@@ -49,10 +48,6 @@ final class ExploreSession
         $contextJustChanged = false;
 
         while (true) {
-            if ($this->contextRenderer !== null) {
-                ($this->contextRenderer)($context, $io);
-            }
-
             $contextDisplay = $this->resumeCommandBuilder !== null
                 ? ($this->resumeCommandBuilder)($context)
                 : '';
@@ -75,7 +70,7 @@ final class ExploreSession
             $tool = $item->tool;
 
             $io->writeLine('');
-            $io->writeInfo('---' . $tool->getMenuLabel($context) . ' ---');
+            $io->writeInfo('# ' . $shortName . ': ' . $tool->getMenuLabel($context));
 
             $result = $this->dispatcher->execute($tool, $context, $io);
 

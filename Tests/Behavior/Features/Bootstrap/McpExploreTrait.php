@@ -27,11 +27,6 @@ trait McpExploreTrait
     /** @var array<string, string> tool short name => menu label */
     private array $lastAvailableTools = [];
 
-    private const MCP_EXCLUDED_TOOLS = [
-        ExitTool::class,
-        ShowResumeCommandTool::class,
-    ];
-
     // --- When steps ---
 
     /**
@@ -223,9 +218,6 @@ trait McpExploreTrait
     {
         $tools = [];
         foreach ($this->exploreDispatcher->availableTools($this->exploreContext) as $tool) {
-            if (in_array($tool::class, self::MCP_EXCLUDED_TOOLS, true)) {
-                continue;
-            }
             $tools[(new \ReflectionClass($tool))->getShortName()] = $tool->getMenuLabel($this->exploreContext);
         }
         return $tools;

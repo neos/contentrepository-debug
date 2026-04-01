@@ -2,25 +2,20 @@ Neos:
   ContentRepository:
     Debug:
       explore:
-        # Column layout for the interactive tool-selection widget.
-        # Each key is an arbitrary identifier; `position` controls sort order
-        # (supports numeric strings or relational values like "before nodes").
-        # Override in your site package's Settings.yaml to add columns or reorder groups.
         menuColumns:
-          workspace:
-            position: '10'
+          10:
             groups:
               - Workspace
-          dimensions:
-            position: '20'
-            groups:
               - Dimensions
-          nodes:
-            position: '30'
+
+          20:
             groups:
               - Nodes
-          events:
-            position: '40'
+          30:
             groups:
+              - ContentRepository
               - Events
+
+          40:
+            groups:
               - Other

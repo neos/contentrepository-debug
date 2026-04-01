@@ -64,14 +64,6 @@ class CrCommandController extends CommandController
         ]);
 
         $serializer = $this->exploreSessionFactory->getSerializer();
-        $contextRenderer = static function (ToolContext $ctx, ToolIOInterface $io) use ($serializer): void {
-            $parts = [];
-            foreach ($serializer->serialize($ctx) as $name => $value) {
-                $parts[] = "$name=$value";
-            }
-            $io->writeLine('');
-            $io->writeNote('=== ' . ($parts !== [] ? implode(' | ', $parts) : '(empty context)') . ' ===');
-        };
 
         $resumeCommandBuilder = static function (ToolContext $ctx) use ($serializer): string {
             $parts = ['./flow cr:explore'];
@@ -90,7 +82,7 @@ class CrCommandController extends CommandController
         $io = new CliToolIO($this->menuColumns);
         $this->displaySubscriptionWarnings(ContentRepositoryId::fromString($contentRepository), $io);
 
-        $session = new ExploreSession($dispatcher, $contextRenderer, $resumeCommandBuilder);
+        $session = new ExploreSession($dispatcher, $resumeCommandBuilder);
         $session->run($ctx, $io);
     }
 

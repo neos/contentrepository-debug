@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Neos\ContentRepository\Debug\Explore\Tool\Status;
+namespace Neos\ContentRepository\Debug\Explore\Tool\ContentRepository;
 
 use Neos\ContentRepository\Core\Service\ContentRepositoryMaintainer;
 use Neos\ContentRepository\Core\Subscription\DetachedSubscriptionStatus;
@@ -17,8 +17,8 @@ use Neos\ContentRepository\Debug\Explore\ToolContext;
  * @internal Displays subscription status overview and detailed error info for broken projections.
  * @see ContentRepositoryMaintainer::status() for the underlying status API.
  */
-#[ToolMeta(shortName: 'subStatus', group: 'Events')]
-final class SubscriptionStatusTool implements ToolInterface
+#[ToolMeta(shortName: 'status', group: 'ContentRepository')]
+final class StatusTool implements ToolInterface
 {
     public function getMenuLabel(ToolContext $context): string
     {
@@ -37,10 +37,9 @@ final class SubscriptionStatusTool implements ToolInterface
         }
 
         $positionInfo = $crStatus->eventStorePosition !== null
-            ? 'Event store position: ' . $crStatus->eventStorePosition->value
-            : 'Event store position: unknown';
+            ? 'Event store sequence_number: ' . $crStatus->eventStorePosition->value
+            : 'Event store sequence_number: unknown';
         $io->writeLine($positionInfo);
-        $io->writeLine('');
 
         $rows = [];
         $errorDetails = [];
