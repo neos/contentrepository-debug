@@ -89,29 +89,24 @@ final class CompactEventsTool implements ToolInterface
 
     public function getMenuLabel(ToolContext $context): string
     {
-        return 'Compact events: fold NodePropertiesWereSet streaks (⚠ modifies event store)';
+        return 'Compact events: merge property-edit duplicates within live streams (⚠ modifies event store)';
     }
 
     public function execute(
         ToolIOInterface $io,
         ContentRepositoryId $cr,
     ): ?ToolContext {
-        // --- Step 1: Warn if targeting a production CR ---
+        // --- Step 1: Warn if targeting a production CR (informational only — single confirm below) ---
         if ($this->registrar->isRegistered($cr)) {
             $io->writeNote(sprintf(
                 'Warning: "%s" is a production CR registered in Flow settings.',
                 $cr->value
             ));
             $io->writeLine('Run crCopy first to create a shadow CR and run compaction there.');
-            if (!$io->confirm('Proceed anyway on the production CR?')) {
-                $io->writeLine('Aborted.');
-                return null;
-            }
         }
 
         // --- Step 2: Confirm compaction ---
-        $confirm = trim($io->ask(sprintf('Type "yes" to compact NodePropertiesWereSet streaks in CR "%s"', $cr->value)));
-        if ($confirm !== 'yes') {
+        if (!$io->confirm(sprintf('Compact NodePropertiesWereSet streaks in CR "%s"? (⚠ modifies event store)', $cr->value))) {
             $io->writeLine('Aborted.');
             return null;
         }

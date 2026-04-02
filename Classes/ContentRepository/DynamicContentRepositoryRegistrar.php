@@ -20,6 +20,9 @@ use Neos\Flow\Annotations as Flow;
 #[Flow\Scope('singleton')]
 final class DynamicContentRepositoryRegistrar
 {
+    /** @var array<string, true> IDs registered at runtime (not from Flow settings) */
+    private array $dynamicIds = [];
+
     public function __construct(
         private readonly ContentRepositoryRegistry $contentRepositoryRegistry,
         private readonly Connection $dbal,
@@ -54,8 +57,16 @@ final class DynamicContentRepositoryRegistrar
         return $ids;
     }
 
+    /**
+     * Returns true only for CRs configured in Flow settings.
+     * Dynamically registered shadow CRs (added via {@see register()}) return false —
+     * they are debug copies, not production CRs.
+     */
     public function isRegistered(ContentRepositoryId $id): bool
     {
+        if (isset($this->dynamicIds[$id->value])) {
+            return false;
+        }
         foreach ($this->contentRepositoryRegistry->getContentRepositoryIds() as $registeredId) {
             if ($registeredId->value === $id->value) {
                 return true;
@@ -85,6 +96,9 @@ final class DynamicContentRepositoryRegistrar
         $settingsProp->setAccessible(true); // required for private properties
         /** @var array<string, mixed> $settings */
         $settings = $settingsProp->getValue($this->contentRepositoryRegistry);
+
+        // Track as dynamically registered so isRegistered() excludes it
+        $this->dynamicIds[$dynamicId->value] = true;
 
         // Clone source CR's config under the new ID
         $settings['contentRepositories'][$dynamicId->value] = $settings['contentRepositories'][$sourceId->value];

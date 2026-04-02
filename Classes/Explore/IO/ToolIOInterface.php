@@ -77,4 +77,14 @@ interface ToolIOInterface
      * @param \Closure(callable $advance): void $callback
      */
     public function progress(string $label, int $total, \Closure $callback): void;
+
+    /**
+     * Run a long-running callback inside a labeled task with a spinner and scrolling live output area.
+     * Calls $callback with a $log callable — call $log(string $line) to stream lines into the output area.
+     *
+     * In CLI this renders as a Laravel Prompts task widget; in MCP/test the lines are emitted inline.
+     *
+     * @param \Closure(callable(string): void $log): void $callback
+     */
+    public function task(string $label, \Closure $callback): void;
 }

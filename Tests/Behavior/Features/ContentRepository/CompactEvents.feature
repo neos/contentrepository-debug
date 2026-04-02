@@ -50,7 +50,6 @@ Feature: CompactEventsTool — fold consecutive NodePropertiesWereSet streaks
       | cr | default |
     When I execute the explore tool "CompactEventsTool" with inputs:
       | answer | yes |
-      | answer | yes |
     Then the tool output should contain "Compacted"
     And the tool output should contain "deleted 2"
 
@@ -84,7 +83,6 @@ Feature: CompactEventsTool — fold consecutive NodePropertiesWereSet streaks
       | cr | default |
     When I execute the explore tool "CompactEventsTool" with inputs:
       | answer | yes |
-      | answer | yes |
     Then the tool output should contain "Compacted"
     And the tool output should contain "deleted 2"
 
@@ -100,7 +98,6 @@ Feature: CompactEventsTool — fold consecutive NodePropertiesWereSet streaks
     And the explore context is:
       | cr | default |
     When I execute the explore tool "CompactEventsTool" with inputs:
-      | answer | yes |
       | answer | yes |
     Then the tool output should contain "Nothing to compact"
 
@@ -120,7 +117,6 @@ Feature: CompactEventsTool — fold consecutive NodePropertiesWereSet streaks
     And the explore context is:
       | cr | default |
     When I execute the explore tool "CompactEventsTool" with inputs:
-      | answer | yes |
-      | answer | no  |
+      | answer | no |
     Then the tool output should contain "Aborted"
     And the tool output should not contain "Compacted"

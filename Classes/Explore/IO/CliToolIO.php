@@ -110,4 +110,20 @@ final class CliToolIO implements ToolIOInterface
         $callback(static function() use ($bar): void { $bar->advance(); });
         $bar->finish();
     }
+
+    public function task(string $label, \Closure $callback): void
+    {
+        \Laravel\Prompts\task($label, static function(\Laravel\Prompts\Support\Logger $logger) use ($callback): void {
+            // In the renderStatically fallback (stream_socket_pair unavailable), Logger has no socket.
+            // Catch the resulting TypeError so the task runs to completion without crashing.
+            $log = static function(string $line) use ($logger): void {
+                try {
+                    $logger->line($line);
+                } catch (\TypeError) {
+                    // Static rendering path — Logger socket is null; log line not transmittable.
+                }
+            };
+            $callback($log);
+        });
+    }
 }

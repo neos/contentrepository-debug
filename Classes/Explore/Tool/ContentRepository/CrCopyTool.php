@@ -137,6 +137,7 @@ final class CrCopyTool implements ToolInterface
         );
 
         $io->writeInfo(sprintf('Done. Copied %d table(s) to "%s".', count($result), $targetCrId->value));
+        $io->writeNote('Tip: Run "pruneRemovedContentStreams" on the new CR to delete old content stream histories — drastically reduces event count for experimentation.');
         return null;
     }
 }

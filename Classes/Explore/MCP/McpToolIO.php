@@ -185,6 +185,13 @@ final class McpToolIO implements ToolIOInterface
         $this->lines[] = $label . ' done.';
     }
 
+    public function task(string $label, \Closure $callback): void
+    {
+        // MCP is stateless — emit task log lines inline without spinner.
+        $this->lines[] = $label . '…';
+        $callback(fn(string $line) => $this->writeLine($line));
+    }
+
     /**
      * @return array{tables: list<array{headers: list<string>, rows: list<list<string>>}>, keyValues: list<array<string, string>>, lines: list<string>, errors: list<string>}
      */

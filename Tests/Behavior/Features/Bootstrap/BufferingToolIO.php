@@ -127,6 +127,11 @@ final class BufferingToolIO implements ToolIOInterface
         $callback(static function(): void {});
     }
 
+    public function task(string $label, \Closure $callback): void
+    {
+        $callback(fn(string $line) => $this->writeLine($line));
+    }
+
     /**
      * Returns all output concatenated for easy string assertions.
      * Key-values appear as "Key: value", tables as "col1 | col2" rows.
