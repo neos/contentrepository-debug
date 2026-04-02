@@ -23,6 +23,7 @@ final class CrCopyTool implements ToolInterface
     public function __construct(
         private readonly Connection $dbal,
         private readonly ContentRepositoryId $cr,
+        private readonly ToolContext $context,
     ) {}
 
     public function getMenuLabel(ToolContext $context): string
@@ -135,8 +136,9 @@ final class CrCopyTool implements ToolInterface
             array_map(fn(array $r) => [$r['src'], $r['dst'], (string)$r['rows']], $result),
         );
 
-        $io->writeInfo(sprintf('Done. Copied %d table(s) to "%s".', count($result), $targetCrId->value));
+        $io->writeInfo(sprintf('Done. Copied %d table(s) to "%s" (and activated "%s").', count($result), $targetCrId->value, $targetCrId->value));
         $io->writeNote('Tip: Run "pruneRemovedContentStreams" on the new CR to delete old content stream histories — drastically reduces event count for experimentation.');
-        return null;
+
+        return $this->context->with('cr', $targetCrId);
     }
 }
