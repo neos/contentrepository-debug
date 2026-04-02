@@ -41,7 +41,9 @@ Feature: CrCopyTool — exact DB-level copy of a content repository
     And the explore context is:
       | cr | default |
     When I execute the explore tool "CrCopyTool" and answer "dfl_shadow_b"
-    And I execute the explore tool "CrCopyTool" and answer "dfl_shadow_b" and answer "no"
+    And I execute the explore tool "CrCopyTool" with inputs:
+      | answer | dfl_shadow_b |
+      | answer | no           |
     Then the tool output should contain "Aborted"
 
   Scenario: Copying to an existing target with events requires confirmation — confirming overwrites
@@ -49,5 +51,7 @@ Feature: CrCopyTool — exact DB-level copy of a content repository
     And the explore context is:
       | cr | default |
     When I execute the explore tool "CrCopyTool" and answer "dfl_shadow_c"
-    And I execute the explore tool "CrCopyTool" and answer "dfl_shadow_c" and answer "yes"
+    And I execute the explore tool "CrCopyTool" with inputs:
+      | answer | dfl_shadow_c |
+      | answer | yes          |
     Then the tool output should contain "Done"

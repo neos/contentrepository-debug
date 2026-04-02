@@ -89,15 +89,32 @@ trait ExploreTrait
     }
 
     /**
-     * For tools that present two sequential choose() prompts (e.g. choose type, then choose node).
+     * Table-based multi-input driver for tools with more than one prompt.
      *
-     * @When I execute the explore tool :toolName and choose :choice1 then :choice2
+     * Each row is: | type | value |
+     * Supported types:
+     *   answer      — queued for ask() and confirm()
+     *   choice      — queued for chooseFromTable() / chooseFromMenu()
+     *   multiChoice — queued for chooseMultiple() (comma-separated keys)
+     *
+     * Example:
+     *   When I execute the explore tool "CompactEventsTool" with inputs:
+     *     | answer | yes |
+     *     | answer | yes |
+     *
+     * @When I execute the explore tool :toolName with inputs:
      */
-    public function iExecuteTheExploreToolAndChooseThen(string $toolName, string $choice1, string $choice2): void
+    public function iExecuteTheExploreToolWithInputs(string $toolName, TableNode $table): void
     {
         $io = new BufferingToolIO();
-        $io->queueChoice($choice1);
-        $io->queueChoice($choice2);
+        foreach ($table->getRows() as $row) {
+            match ($row[0]) {
+                'answer'      => $io->queueAnswer($row[1] ?? ''),
+                'choice'      => $io->queueChoice($row[1] ?? ''),
+                'multiChoice' => $io->queueMultipleChoice($row[1] ?? ''),
+                default       => throw new \InvalidArgumentException(sprintf('Unknown input type "%s". Use answer, choice, or multiChoice.', $row[0])),
+            };
+        }
         $this->runTool($toolName, $io);
     }
 
@@ -119,33 +136,6 @@ trait ExploreTrait
         foreach ($tables as $table) {
             $dbal->executeStatement("DROP TABLE IF EXISTS {$table}");
         }
-    }
-
-    /**
-     * For tools that need two sequential ask()/confirm() inputs.
-     *
-     * @When I execute the explore tool :toolName and answer :answer1 and answer :answer2
-     */
-    public function iExecuteTheExploreToolAndAnswerAndAnswer(string $toolName, string $answer1, string $answer2): void
-    {
-        $io = new BufferingToolIO();
-        $io->queueAnswer($answer1);
-        $io->queueAnswer($answer2);
-        $this->runTool($toolName, $io);
-    }
-
-    /**
-     * For tools that ask() for input and then call chooseMultiple() (e.g. EventContextTool).
-     * The :keys argument is a comma-separated list of choice keys.
-     *
-     * @When I execute the explore tool :toolName and answer :answer and multiselect :keys
-     */
-    public function iExecuteTheExploreToolAndAnswerAndMultiselect(string $toolName, string $answer, string $keys): void
-    {
-        $io = new BufferingToolIO();
-        $io->queueAnswer($answer);
-        $io->queueMultipleChoice($keys);
-        $this->runTool($toolName, $io);
     }
 
     /**

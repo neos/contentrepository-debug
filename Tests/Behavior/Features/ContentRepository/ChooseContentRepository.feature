@@ -38,5 +38,7 @@ Feature: ChooseContentRepositoryTool — switch content repository in session
     And the explore context is:
       | cr | default |
     When I execute the explore tool "CrCopyTool" and answer "dfl_cr_reg"
-    And I execute the explore tool "ChooseContentRepositoryTool" and choose "dfl_cr_reg" then "default"
+    And I execute the explore tool "ChooseContentRepositoryTool" with inputs:
+      | choice | dfl_cr_reg |
+      | choice | default    |
     Then the explore context should have "cr" "dfl_cr_reg"

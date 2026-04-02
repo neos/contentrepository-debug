@@ -60,7 +60,9 @@ Feature: Interactive explore tools
     Given the explore context is:
       | cr        | default |
       | workspace | live    |
-    When I execute the explore tool "NodeTypeExplorerTool" and choose "Neos.ContentRepository.Testing:Document" then "page-1"
+    When I execute the explore tool "NodeTypeExplorerTool" with inputs:
+      | choice | Neos.ContentRepository.Testing:Document |
+      | choice | page-1                                  |
     Then the explore context should have "node" "page-1"
     And the tool output should contain "page-1"
 
@@ -68,7 +70,9 @@ Feature: Interactive explore tools
     Given the explore context is:
       | cr        | default |
       | workspace | live    |
-    When I execute the explore tool "NodeTypeExplorerTool" and choose "Neos.ContentRepository.Testing:Document" then "_stay"
+    When I execute the explore tool "NodeTypeExplorerTool" with inputs:
+      | choice | Neos.ContentRepository.Testing:Document |
+      | choice | _stay                                   |
     Then the tool output should contain "page-1"
 
   # ---------------------------------------------------------------------------
@@ -125,7 +129,9 @@ Feature: Interactive explore tools
     Given the explore context is:
       | cr | default |
     # seq 1 = ContentStreamWasCreated (contentStreamId: cs-identifier)
-    When I execute the explore tool "EventContextTool" and answer "1" and multiselect "1"
+    When I execute the explore tool "EventContextTool" with inputs:
+      | answer      | 1 |
+      | multiChoice | 1 |
     Then the tool output should contain "ContentStreamWasCreated"
     And the tool output should contain "contentStreamId: cs-identifier"
 
