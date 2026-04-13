@@ -9,6 +9,7 @@ use Neos\ContentRepository\Core\Service\ContentRepositoryMaintainerFactory;
 use Neos\ContentRepository\Core\Service\ContentStreamPrunerFactory;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Debug\DebugView\DebugViewCreator;
+use Neos\ContentRepository\Debug\Explore\Script\ScriptToolRunner;
 use Neos\ContentRepository\Debug\InternalServices\EventStoreDebuggingInternalsFactory;
 use Neos\ContentRepository\Debug\InternalServices\LowLevelDatabaseUtil;
 use Neos\ContentRepository\Debug\ProjectionWatch\WatchList;
