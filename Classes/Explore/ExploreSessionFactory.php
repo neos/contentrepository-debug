@@ -69,6 +69,42 @@ final class ExploreSessionFactory
         return $this->serializer->deserialize(ToolContext::create($this->registry), array_filter($params));
     }
 
+    /**
+     * Apply interactive-startup conveniences to a context (used by the CLI `cr:debug` entry point):
+     *  - fall back to the "live" workspace when none is set — by far the most common starting point;
+     *  - auto-select the dimension space point when the CR has exactly one. Multiple DSPs are left unset
+     *    so the user picks via {@see \Neos\ContentRepository\Debug\Explore\Tool\Entry\ChooseDimensionTool}.
+     *
+     * Kept separate from {@see buildInitialContext()} so the plain initial context stays default-free
+     * (tests and the MCP transport rely on that).
+     */
+    public function applyStartupDefaults(ToolContext $context): ToolContext
+    {
+        $crId = $context->getByType(ContentRepositoryId::class);
+        if (!$crId instanceof ContentRepositoryId) {
+            return $context;
+        }
+        $cr = $this->contentRepositoryRegistry->get($crId);
+
+        if ($context->getByType(WorkspaceName::class) === null) {
+            $live = WorkspaceName::fromString('live');
+            if ($cr->findWorkspaceByName($live) !== null) {
+                $context = $context->withFromString('workspace', $live->value);
+            }
+        }
+
+        if ($context->getByType(DimensionSpacePoint::class) === null) {
+            $dsps = $cr->getVariationGraph()->getDimensionSpacePoints();
+            if (count($dsps) === 1) {
+                foreach ($dsps as $onlyDsp) {
+                    $context = $context->withFromString('dsp', $onlyDsp->toJson());
+                }
+            }
+        }
+
+        return $context;
+    }
+
     public function getSerializer(): ToolContextSerializer
     {
         return $this->serializer;

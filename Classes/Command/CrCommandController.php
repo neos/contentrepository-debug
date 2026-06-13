@@ -57,6 +57,8 @@ class CrCommandController extends CommandController
             'workspace' => $workspace,
             'dsp' => $dsp,
         ]);
+        // Default to the "live" workspace and auto-select the sole dimension when there is only one.
+        $ctx = $this->exploreSessionFactory->applyStartupDefaults($ctx);
 
         $serializer = $this->exploreSessionFactory->getSerializer();
 
@@ -75,6 +77,7 @@ class CrCommandController extends CommandController
         };
 
         $io = new CliToolIO($this->menuColumns);
+        $io->writeNote('Tip: most explorations start with "dsp" (set dimension), then "nDocTree" (Document tree).');
 
         $session = new ExploreSession($dispatcher, $resumeCommandBuilder);
         $session->run($ctx, $io);
